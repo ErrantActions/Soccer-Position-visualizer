@@ -14,5 +14,5 @@
       "@soccer-position-visualizer/core/*": ["../../packages/core/src/*"]
     }
   },
-  "include": ["App.tsx", "src"]
+  "include": ["src"]
 }

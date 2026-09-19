@@ -4,5 +4,6 @@ export * from './engine/positionProfiles';
 export * from './engine/positioningEngine';
 export * from './types/soccer';
 export * from './utils/clamp';
+export * from './utils/coordinates';
 export * from './utils/geometry';
 export * from './utils/interpolation';

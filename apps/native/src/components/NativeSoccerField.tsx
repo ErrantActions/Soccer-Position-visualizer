@@ -8,13 +8,13 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
-import { POSITION_BOUNDARIES } from '../../../../packages/core/src/engine/positionBoundaries';
+import { POSITION_BOUNDARIES } from '@soccer-position-visualizer/core/engine/positionBoundaries';
 import type {
   DisplaySettings,
   NormalizedPoint,
   PlayerPosition,
   PositioningResult,
-} from '../../../../packages/core/src/types/soccer';
+} from '@soccer-position-visualizer/core/types/soccer';
 import HeatmapOverlay from './HeatmapOverlay';
 
 type NativeSoccerFieldProps = {

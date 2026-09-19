@@ -1,6 +1,6 @@
 import { Canvas, Rect } from '@shopify/react-native-skia';
-import { getHeatmapCells, heatmapColorForScore } from '../../../../packages/core/src/engine/heatmapEngine';
-import type { NormalizedPoint, PlayerPosition } from '../../../../packages/core/src/types/soccer';
+import { getHeatmapCells, heatmapColorForScore } from '@soccer-position-visualizer/core/engine/heatmapEngine';
+import type { NormalizedPoint, PlayerPosition } from '@soccer-position-visualizer/core/types/soccer';
 
 type HeatmapOverlayProps = {
   ball: NormalizedPoint;

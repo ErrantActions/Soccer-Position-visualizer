@@ -1,10 +1,17 @@
 import type { NormalizedPoint } from '../types/soccer';
 import { clamp01 } from './clamp';
 
+export type RectLike = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
 export const toNormalizedPoint = (
   clientX: number,
   clientY: number,
-  rect: DOMRect,
+  rect: RectLike,
 ): NormalizedPoint => {
   const x = clamp01((clientX - rect.left) / rect.width);
   const y = clamp01((clientY - rect.top) / rect.height);

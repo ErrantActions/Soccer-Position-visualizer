@@ -4,9 +4,9 @@ A coaching tool for youth soccer defenders. Select a defensive position, move th
 
 ## Workspace structure
 
-- `/home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/src` — existing Vite web app
-- `/home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/packages/core` — shared TypeScript positioning engine, utilities, and types
-- `/home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/apps/native` — React Native shell for iPhone, Android, tablets, and Windows
+- `src` — existing Vite web app
+- `packages/core` — shared TypeScript positioning engine, utilities, and types
+- `apps/native` — React Native shell for iPhone, Android, tablets, and Windows
 
 ## Features
 
@@ -37,12 +37,12 @@ npm run build
 
 ## Native app setup
 
-The native shell lives in `/home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/apps/native` and reuses the shared core module from `/home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/packages/core`.
+The native shell lives in `apps/native` and reuses the shared core module from `packages/core`.
 
 Install native dependencies inside the native app folder, then run the target you need:
 
 ```bash
-cd /home/runner/work/Soccer-Position-visualizer/Soccer-Position-visualizer/apps/native
+cd apps/native
 npm install
 npm run start
 npm run ios

@@ -8,12 +8,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getRecommendedPosition } from '../../../packages/core/src/engine/positioningEngine';
+import { getRecommendedPosition } from '@soccer-position-visualizer/core/engine/positioningEngine';
 import type {
   DisplaySettings,
   NormalizedPoint,
   PlayerPosition,
-} from '../../../packages/core/src/types/soccer';
+} from '@soccer-position-visualizer/core/types/soccer';
 import NativeSoccerField from './components/NativeSoccerField';
 
 const POSITIONS: PlayerPosition[] = ['LB', 'LCB', 'RCB', 'RB', 'CDM'];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toNormalizedPoint } from './coordinates';
+import { toNormalizedPoint, toPercent } from './coordinates';
 
 describe('coordinates utility', () => {
   it('converts pixel coordinates to normalized coordinates', () => {
@@ -16,5 +16,9 @@ describe('coordinates utility', () => {
 
     expect(point.x).toBe(0);
     expect(point.y).toBe(1);
+  });
+
+  it('converts normalized points into percentage values', () => {
+    expect(toPercent({ x: 0.25, y: 0.75 })).toEqual({ left: '25%', top: '75%' });
   });
 });
