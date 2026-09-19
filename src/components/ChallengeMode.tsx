@@ -113,7 +113,7 @@ const ChallengeMode = () => {
     setScoreBreakdown(null);
     setShowWhy(false);
     setLatestMessage('Find the best team-connected spot before you reveal the answer.');
-  }, [expectedPlayer.formationAnchor.x, expectedPlayer.formationAnchor.y, safeSelectedRole, tacticalState]);
+  }, [expectedPlayer.formationAnchor.x, expectedPlayer.formationAnchor.y, scenario.id, safeSelectedRole, tacticalState]);
 
   const checkAnswer = () => {
     const result = evaluateChallengePlacement(playerPosition, expectedPlayer);
@@ -269,7 +269,6 @@ const ChallengeMode = () => {
           <DisplayControls
             settings={settings}
             onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
-            onResetBall={() => undefined}
           />
 
           <div className="flex flex-wrap gap-2">

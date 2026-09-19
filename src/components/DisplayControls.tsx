@@ -3,7 +3,7 @@ import type { DisplaySettings } from '../types/soccer';
 type DisplayControlsProps = {
   settings: DisplaySettings;
   onToggle: (key: keyof DisplaySettings) => void;
-  onResetBall: () => void;
+  onResetBall?: () => void;
 };
 
 const toggleDefinitions: Array<{ key: keyof DisplaySettings; label: string }> = [
@@ -36,13 +36,15 @@ const DisplayControls = ({ settings, onToggle, onResetBall }: DisplayControlsPro
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onResetBall}
-        className="mt-3 min-h-11 w-full rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-      >
-        Reset Ball
-      </button>
+      {onResetBall ? (
+        <button
+          type="button"
+          onClick={onResetBall}
+          className="mt-3 min-h-11 w-full rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+        >
+          Reset Ball
+        </button>
+      ) : null}
     </section>
   );
 };
