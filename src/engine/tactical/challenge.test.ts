@@ -30,4 +30,19 @@ describe('tactical challenge scoring', () => {
     expect(result.positioningScore).toBeGreaterThanOrEqual(95);
     expect(result.goalSideScore).toBeGreaterThanOrEqual(85);
   });
+
+  it('penalizes placements that end up in front of the ball', () => {
+    const model = buildTeamTacticalModel({
+      ball: { x: 0.52, y: 0.34 },
+      tacticalState: TacticalState.Defending,
+      ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+      learningMode: 'standard',
+      selectedRole: 'LB',
+    });
+    const player = findPlayerResult(model, 'LB');
+    const result = evaluateChallengePlacement({ x: 0.78, y: 0.9 }, player);
+
+    expect(result.goalSideScore).toBeLessThan(60);
+    expect(result.positioningScore).toBeLessThan(80);
+  });
 });

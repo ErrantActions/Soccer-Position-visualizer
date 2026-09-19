@@ -83,20 +83,21 @@ export const buildTeamTacticalModel = (
   teamShape: TeamShapeConfig = defaultTeamShape,
 ): TeamTacticalResult => {
   const players = teamShape.activePlayers.filter((player) => player.active);
-  const anchors = createAnchorPositions(players);
-  const responsibilities = assignResponsibilities(players, anchors, context);
+  const activePlayers = players.length > 0 ? players : [createDefaultPlayers().find((player) => player.role === 'GK')!];
+  const anchors = createAnchorPositions(activePlayers);
+  const responsibilities = assignResponsibilities(activePlayers, anchors, context);
   const lanes = buildPassingLanes(context);
-  const supportTriangles = buildSupportTriangles(anchors, players);
+  const supportTriangles = buildSupportTriangles(anchors, activePlayers);
   const dangerMap = createDangerMap();
 
   const provisionalPositions = Object.fromEntries(
-    players.map((player) => {
+    activePlayers.map((player) => {
       const profile = ROLE_BEHAVIOR_PROFILES[player.role];
       return [player.id, getStateModifier(profile.anchor, context)];
     }),
   ) as Record<string, NormalizedPoint>;
 
-  const results: PlayerTacticalResult[] = players.map((player) => {
+  const results: PlayerTacticalResult[] = activePlayers.map((player) => {
     const profile = ROLE_BEHAVIOR_PROFILES[player.role];
     const stateProfile = TACTICAL_STATE_PROFILES[context.tacticalState];
     const formationAnchor = profile.anchor;
@@ -150,6 +151,7 @@ export const buildTeamTacticalModel = (
     const explanationTags = pickExplanationTags({
       player,
       roleProfile: profile,
+      contextBall: context.ball,
       zone,
       formationAnchor,
       finalPosition,
@@ -170,6 +172,7 @@ export const buildTeamTacticalModel = (
     return {
       player,
       roleProfile: profile,
+      contextBall: context.ball,
       zone,
       formationAnchor,
       finalPosition,
@@ -197,7 +200,7 @@ export const buildTeamTacticalModel = (
   });
 
   const finalPositions = Object.fromEntries(results.map((result) => [result.player.id, result.finalPosition])) as Record<string, NormalizedPoint>;
-  const compactness = measureCompactness(players, finalPositions);
+  const compactness = measureCompactness(activePlayers, finalPositions);
 
   return {
     players: results,
@@ -206,7 +209,7 @@ export const buildTeamTacticalModel = (
     passingLanes: lanes,
     dangerMap,
     ball: context.ball,
-    activeRoleIds: players.map((player) => player.role),
+    activeRoleIds: activePlayers.map((player) => player.role),
     selectedRole: context.selectedRole,
     tacticalState: context.tacticalState,
     learningMode: context.learningMode,

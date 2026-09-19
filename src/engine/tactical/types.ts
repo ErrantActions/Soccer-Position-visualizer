@@ -173,6 +173,7 @@ export type DangerCell = {
 export type PlayerTacticalResult = {
   player: ActivePlayer;
   roleProfile: RoleBehaviorProfile;
+  contextBall: NormalizedPoint;
   zone: TacticalZone;
   formationAnchor: NormalizedPoint;
   finalPosition: NormalizedPoint;

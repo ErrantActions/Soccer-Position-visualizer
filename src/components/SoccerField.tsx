@@ -56,6 +56,16 @@ const SoccerField = ({
   const selectedResult = model.players.find((player) => player.player.role === selectedRole) ?? model.players[0];
 
   const compactnessBand = useMemo(() => {
+    if (model.players.length === 0) {
+      return {
+        top: 0.3,
+        bottom: 0.7,
+        backLine: 0.22,
+        midfieldLine: 0.45,
+        forwardLine: 0.7,
+      };
+    }
+
     const ys = model.players.map((player) => player.finalPosition.y);
     return {
       top: Math.max(0.05, Math.min(...ys) - 0.06),

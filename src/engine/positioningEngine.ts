@@ -51,8 +51,14 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const acceptableRadius = POSITION_PROFILES[position].acceptableRadius;
   const confidence = clamp(Math.round(selected.positioningScore), 0, 100);
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
-  const shouldPressBall = selected.responsibility === 'pressure';
+  const ballInsideBoundary = isPointInPolygon(ball, boundary.points);
   const ballDistance = distance(ball, idealPosition);
+  const ballIsInFront = ball.x >= idealPosition.x - 0.015;
+  const shouldPressBall =
+    selected.responsibility === 'pressure' &&
+    ballInsideBoundary &&
+    ballIsInFront &&
+    ballDistance <= acceptableRadius * 1.7;
   const coachingCue = shouldPressBall
     ? 'Go win the ball'
     : selected.explanation.primary || (ballDistance < acceptableRadius ? 'Support the ball side' : 'Hold shape and protect the middle');
