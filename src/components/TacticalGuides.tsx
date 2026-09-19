@@ -35,15 +35,6 @@ const TacticalGuides = ({ ball, positioning }: TacticalGuidesProps) => {
         strokeDasharray="4 3"
       />
       <line
-        x1={60}
-        y1={40}
-        x2={ball.x * 120}
-        y2={ball.y * 80}
-        stroke="rgba(14, 165, 233, 0.8)"
-        strokeWidth="1"
-        markerEnd={`url(#${markerId})`}
-      />
-      <line
         x1={ball.x * 120}
         y1={ball.y * 80}
         x2={player.x * 120}

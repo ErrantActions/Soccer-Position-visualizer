@@ -1,204 +1,82 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import DisplayControls from './components/DisplayControls';
-import HeatmapLegend from './components/HeatmapLegend';
-import PositionSelector from './components/PositionSelector';
-import SoccerField from './components/SoccerField';
-import { getRecommendedPosition } from './engine/positioningEngine';
-import type { DisplaySettings, NormalizedPoint, PlayerPosition } from './types/soccer';
+import { useMemo, useState } from 'react';
+import ChallengeMode from './components/ChallengeMode';
+import PositionExplorerMode from './components/PositionExplorerMode';
 
-const createCenterBall = (): NormalizedPoint => ({ x: 0.5, y: 0.5 });
+type AppMode = 'explorer' | 'challenge';
 
-const defaultSettings: DisplaySettings = {
-  showHeatmap: true,
-  showBoundaries: true,
-  showGuides: true,
-  showBallLine: true,
-};
+const App = () => {
+  const [mode, setMode] = useState<AppMode>('explorer');
 
-function App() {
-  const [selectedPosition, setSelectedPosition] = useState<PlayerPosition>('LB');
-  const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
-  const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const backgroundContentRef = useRef<HTMLDivElement>(null);
-  const menuPanelRef = useRef<HTMLElement>(null);
-  const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
-  const shouldRestoreFocusRef = useRef(true);
-
-  const positioning = useMemo(
-    () => getRecommendedPosition({ ball, position: selectedPosition }),
-    [ball, selectedPosition],
-  );
-
-  const openMenu = () => {
-    lastFocusedElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    shouldRestoreFocusRef.current = true;
-    setIsMenuOpen(true);
-  };
-
-  const closeMenu = (restoreFocus = true) => {
-    shouldRestoreFocusRef.current = restoreFocus;
-    setIsMenuOpen(false);
-  };
-
-  useEffect(() => {
-    backgroundContentRef.current?.toggleAttribute('inert', isMenuOpen);
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      const restoreTarget = lastFocusedElementRef.current;
-
-      if (shouldRestoreFocusRef.current) {
-        requestAnimationFrame(() => restoreTarget?.focus());
-      }
-
-      lastFocusedElementRef.current = null;
-      shouldRestoreFocusRef.current = true;
-      return;
+  const orientationHint = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
     }
 
-    closeMenuButtonRef.current?.focus();
+    return window.matchMedia('(max-width: 900px) and (orientation: portrait)').matches;
+  }, []);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeMenu();
-        return;
+  const requestLandscape = async () => {
+    try {
+      if (document.fullscreenElement === null && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
       }
 
-      if (event.key !== 'Tab') {
-        return;
+      if ('orientation' in screen && 'lock' in screen.orientation) {
+        await screen.orientation.lock('landscape');
       }
-
-      const focusableElements = menuPanelRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-
-      if (!focusableElements?.length) {
-        event.preventDefault();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMenuOpen]);
+    } catch {
+      // no-op: browser may block orientation lock outside supported contexts
+    }
+  };
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
-      <div ref={backgroundContentRef} aria-hidden={isMenuOpen} className="h-full">
-      <SoccerField
-        ball={ball}
-        onBallChange={setBall}
-        selectedPosition={selectedPosition}
-        positioning={positioning}
-        settings={settings}
-      />
-
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-3 sm:p-4">
-        <div className="pointer-events-auto max-w-sm rounded-xl border border-white/10 bg-slate-950/78 px-4 py-3 text-slate-100 shadow-lg backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Soccer Positioning Visualizer</p>
-          <p className="mt-1 text-lg font-semibold">{selectedPosition} defensive view</p>
-          <p className="mt-1 text-sm text-slate-300">Drag the ball and use the menu to switch positions or overlays.</p>
-        </div>
-        <button
-          type="button"
-          onClick={openMenu}
-          aria-expanded={isMenuOpen}
-          aria-controls="field-settings-menu"
-          className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-slate-950/82 px-4 py-2 text-sm font-semibold text-slate-50 shadow-lg backdrop-blur-md transition hover:bg-slate-900/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-        >
-          <span aria-hidden="true">☰</span>
-          Menu
-        </button>
-      </div>
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 sm:p-4">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3">
-          {positioning.isOutsideNormalBoundary ? (
-            <p className="pointer-events-auto rounded-xl border border-amber-300/60 bg-amber-400/15 px-4 py-3 text-sm text-amber-100 shadow-lg backdrop-blur-md">
-              Covering outside the usual {selectedPosition} area.
-            </p>
-          ) : null}
-          <div
-            className={`pointer-events-auto rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md ring-1 ${
-              positioning.shouldPressBall
-                ? 'border-rose-300/60 bg-rose-500/15 text-rose-50 ring-rose-200/20'
-                : 'border-slate-700 bg-slate-900/85 text-slate-100 ring-white/10'
-            }`}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em]">
-                {positioning.shouldPressBall ? 'Pressure cue' : 'Shape cue'}
-              </p>
-              <p className={`text-sm ${positioning.shouldPressBall ? 'text-rose-100' : 'text-slate-300'}`}>
-                Confidence {Math.round(positioning.confidence)}%
-              </p>
+    <div className="min-h-dvh w-full overflow-hidden bg-radial-[at_10%_0%] from-cyan-900/30 via-slate-950 to-slate-950 p-2 sm:p-3 md:p-4">
+      <div className="mx-auto flex h-[calc(100dvh-1rem)] max-w-[1400px] flex-col gap-3 md:h-[calc(100dvh-2rem)]">
+        <header className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 shadow-xl backdrop-blur-md">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Soccer Positioning Visualizer</p>
+              <h1 className="text-lg font-bold text-slate-50 sm:text-xl">Learn shape, spacing, and goal-side defending</h1>
             </div>
-            <p className="mt-2 text-base font-semibold">{positioning.coachingCue}</p>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      {isMenuOpen ? (
-        <div className="absolute inset-0 z-40" onClick={() => closeMenu()}>
-          <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" />
-          <aside
-            id="field-settings-menu"
-            ref={menuPanelRef}
-            className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto border-l border-white/10 bg-slate-950/96 p-4 text-slate-100 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="field-settings-title"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Menu</p>
-                <h1 id="field-settings-title" className="mt-1 text-2xl font-bold">
-                  Field settings
-                </h1>
-                <p className="mt-1 text-sm text-slate-300">Change the defender, overlays, and ball state without leaving the field.</p>
-              </div>
+            <div className="flex flex-wrap gap-2">
               <button
-                ref={closeMenuButtonRef}
                 type="button"
-                onClick={() => closeMenu()}
-                className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+                onClick={() => setMode('explorer')}
+                className={`min-h-11 rounded-lg px-3 text-sm font-semibold transition ${
+                  mode === 'explorer' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-100 hover:bg-slate-700'
+                }`}
               >
-                Close
+                Position Explorer
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('challenge')}
+                className={`min-h-11 rounded-lg px-3 text-sm font-semibold transition ${
+                  mode === 'challenge' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-100 hover:bg-slate-700'
+                }`}
+              >
+                Challenge Mode
               </button>
             </div>
+          </div>
+          {orientationHint ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-500/15 px-3 py-2 text-sm text-amber-100">
+              <span>For more field space, rotate your phone to landscape.</span>
+              <button
+                type="button"
+                onClick={requestLandscape}
+                className="rounded-md bg-amber-300 px-2 py-1 text-xs font-semibold text-slate-950"
+              >
+                Try Landscape
+              </button>
+            </div>
+          ) : null}
+        </header>
 
-            <PositionSelector value={selectedPosition} onChange={setSelectedPosition} />
-            <DisplayControls
-              settings={settings}
-              onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
-              onResetBall={() => setBall(createCenterBall())}
-            />
-            <HeatmapLegend />
-          </aside>
-        </div>
-      ) : null}
+        <main className="min-h-0 flex-1">{mode === 'explorer' ? <PositionExplorerMode /> : <ChallengeMode />}</main>
+      </div>
     </div>
   );
-}
+};
 
 export default App;
