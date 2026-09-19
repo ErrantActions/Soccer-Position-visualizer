@@ -6,16 +6,21 @@ type DisplayControlsProps = {
   onResetBall: () => void;
 };
 
-const DisplayControls = ({ settings, onToggle, onResetBall }: DisplayControlsProps) => {
-  const toggleDefinitions: Array<{ key: keyof DisplaySettings; label: string }> = [
-    { key: 'showHeatmap', label: 'Show Heatmap' },
-    { key: 'showBoundaries', label: 'Show Position Boundaries' },
-    { key: 'showGuides', label: 'Show Tactical Guides' },
-    { key: 'showBallLine', label: 'Show Ball to Player Line' },
-  ];
+const toggleDefinitions: Array<{ key: keyof DisplaySettings; label: string }> = [
+  { key: 'showDangerMap', label: 'Danger map' },
+  { key: 'showGoalSideIndicators', label: 'Goal-side guides' },
+  { key: 'showDefensiveCones', label: 'Defensive cones' },
+  { key: 'showPassingLanes', label: 'Passing lanes' },
+  { key: 'showSupportTriangles', label: 'Support triangles' },
+  { key: 'showCompactnessBands', label: 'Compactness bands' },
+  { key: 'showPressureAssignments', label: 'Pressure / cover / balance' },
+  { key: 'showWeakSideShading', label: 'Weak-side shading' },
+];
 
+const DisplayControls = ({ settings, onToggle, onResetBall }: DisplayControlsProps) => {
   return (
     <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10" aria-label="Display controls">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Overlays</p>
       <div className="grid gap-2 sm:grid-cols-2">
         {toggleDefinitions.map(({ key, label }) => (
           <button

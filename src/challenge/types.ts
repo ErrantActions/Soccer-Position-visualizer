@@ -1,4 +1,5 @@
 import type { NormalizedPoint, PlayerPosition } from '../types/soccer';
+import type { TacticalRole } from '../engine/tactical';
 
 export type ChallengeCategory =
   | 'Defending'
@@ -35,7 +36,7 @@ export type ChallengeScore = {
 
 export type PlayerProfile = {
   name: string;
-  favoritePosition: PlayerPosition;
+  favoritePosition: TacticalRole;
   age: number | '';
 };
 
