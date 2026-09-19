@@ -137,4 +137,31 @@ describe('team tactical engine', () => {
     const rm = findPlayerResult(team, 'RM');
     expect(rm.finalPosition.y).toBeLessThan(rm.formationAnchor.y);
   });
+
+  it('moves outside backs noticeably with the ball instead of leaving them near the anchor', () => {
+    const nearBall = getRecommendedPosition({ ball: { x: 0.22, y: 0.16 }, position: 'LB' });
+    const farBall = getRecommendedPosition({ ball: { x: 0.78, y: 0.76 }, position: 'LB' });
+
+    expect(farBall.idealPosition.x - nearBall.idealPosition.x).toBeGreaterThan(0.12);
+    expect(farBall.idealPosition.y - nearBall.idealPosition.y).toBeGreaterThan(0.08);
+  });
+
+  it('pushes the midfield line higher in attacking states for the same ball location', () => {
+    const defending = buildTeamTacticalModel({
+      ball: { x: 0.68, y: 0.46 },
+      tacticalState: TacticalState.Defending,
+      ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+      learningMode: 'standard',
+      selectedRole: 'CDM',
+    });
+    const attacking = buildTeamTacticalModel({
+      ball: { x: 0.68, y: 0.46 },
+      tacticalState: TacticalState.Attacking,
+      ballCarrierTeam: getBallCarrierTeam(TacticalState.Attacking),
+      learningMode: 'standard',
+      selectedRole: 'CDM',
+    });
+
+    expect(findPlayerResult(attacking, 'CDM').finalPosition.x).toBeGreaterThan(findPlayerResult(defending, 'CDM').finalPosition.x + 0.04);
+  });
 });

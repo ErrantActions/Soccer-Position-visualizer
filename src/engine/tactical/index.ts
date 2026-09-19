@@ -39,11 +39,18 @@ const blendInfluences = (influences: PositionInfluence[], clampRange: { x: [numb
   };
 };
 
-const getStateModifier = (anchor: NormalizedPoint, context: TacticalContext) => {
+const getStateModifier = (profile: (typeof ROLE_BEHAVIOR_PROFILES)[TacticalRole], context: TacticalContext) => {
   const state = TACTICAL_STATE_PROFILES[context.tacticalState];
+  const anchor = profile.anchor;
+  const depthResponse =
+    profile.line === 'goalkeeper' ? 0.18 : profile.line === 'back' ? 0.32 : profile.line === 'midfield' ? 0.4 : 0.28;
+  const widthResponse = profile.side === 'center' ? 0.34 : 0.54;
+  const stateDepthBias = context.ballCarrierTeam === 'own' ? state.supportDepth : state.linePush;
+  const ballDepthShift = (context.ball.x - anchor.x) * depthResponse;
+  const ballWidthShift = (context.ball.y - anchor.y) * widthResponse;
   return {
-    x: clamp(anchor.x + state.linePush, 0, 1),
-    y: clamp(anchor.y + (context.ball.y - 0.5) * state.widthBias, 0, 1),
+    x: clamp(anchor.x + stateDepthBias + ballDepthShift, 0, 1),
+    y: clamp(anchor.y + ballWidthShift + (context.ball.y - 0.5) * state.widthBias, 0, 1),
   };
 };
 
@@ -93,7 +100,7 @@ export const buildTeamTacticalModel = (
   const provisionalPositions = Object.fromEntries(
     activePlayers.map((player) => {
       const profile = ROLE_BEHAVIOR_PROFILES[player.role];
-      return [player.id, getStateModifier(profile.anchor, context)];
+      return [player.id, getStateModifier(profile, context)];
     }),
   ) as Record<string, NormalizedPoint>;
 
@@ -101,7 +108,7 @@ export const buildTeamTacticalModel = (
     const profile = ROLE_BEHAVIOR_PROFILES[player.role];
     const stateProfile = TACTICAL_STATE_PROFILES[context.tacticalState];
     const formationAnchor = profile.anchor;
-    const stateTarget = getStateModifier(formationAnchor, context);
+    const stateTarget = getStateModifier(profile, context);
     const goalSideTarget = calculateGoalSidePosition(profile, context);
     const dangerTarget = getDangerZoneTarget(player, profile, context);
     const passingLaneTarget = getPassingLaneTarget(profile, lanes);
@@ -126,8 +133,8 @@ export const buildTeamTacticalModel = (
     const widthDepthTarget = getWidthDepthTarget(formationAnchor, stateTarget, context);
 
     const influences: PositionInfluence[] = [
-      { id: 'formationAnchor', label: 'Formation anchor', target: formationAnchor, weight: 0.16, reasonTags: ['maintain-shape'] },
-      { id: 'stateModifier', label: 'Tactical state', target: stateTarget, weight: 0.08 + stateProfile.compactness * 0.08, reasonTags: ['maintain-depth'] },
+      { id: 'formationAnchor', label: 'Formation anchor', target: formationAnchor, weight: 0.1, reasonTags: ['maintain-shape'] },
+      { id: 'stateModifier', label: 'Tactical state', target: stateTarget, weight: 0.14 + stateProfile.compactness * 0.1, reasonTags: ['maintain-depth'] },
       { id: 'goalSidePosition', label: 'Goal side', target: goalSideTarget, weight: profile.goalSideInfluence, reasonTags: ['protect-goal', 'stay-goal-side'] },
       { id: 'dangerZoneCoverage', label: 'Danger coverage', target: dangerTarget, weight: profile.dangerInfluence, reasonTags: ['protect-central-area', 'cover-danger-space'] },
       { id: 'passingLaneCoverage', label: 'Passing lane', target: passingLaneTarget, weight: player.role === 'CDM' || player.line === 'back' ? 0.12 : 0.06, reasonTags: ['passing-lane-denial'] },
