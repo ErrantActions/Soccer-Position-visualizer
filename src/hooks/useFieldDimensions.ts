@@ -25,13 +25,19 @@ export const useFieldDimensions = (ref: RefObject<HTMLElement | null>): FieldDim
     measure();
 
     if (typeof ResizeObserver === 'undefined') {
-      return;
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
     }
 
     const observer = new ResizeObserver(measure);
     observer.observe(element);
-    return () => observer.disconnect();
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, [ref]);
+  
 
   return dimensions;
 };

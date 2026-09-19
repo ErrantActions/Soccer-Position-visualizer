@@ -121,9 +121,10 @@ export const useBallDrag = ({ fieldRef, ball, onBallChange }: UseBallDragArgs): 
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
+      flushPendingImmediately();
       stopDragging();
     },
-    [dragState.pointerId, stopDragging],
+    [dragState.pointerId, flushPendingImmediately, stopDragging],
   );
 
   const handleLostPointerCapture = useCallback(() => {

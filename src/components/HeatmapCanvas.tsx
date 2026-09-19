@@ -62,7 +62,7 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
   return (
     <canvas
       ref={canvasRef}
-      className={`absolute inset-0 z-10 ${visible ? 'block opacity-100' : 'hidden opacity-0'}`}
+      className={`absolute inset-0 z-10 ${visible ? 'block' : 'hidden'}`}
       aria-hidden="true"
     />
   );

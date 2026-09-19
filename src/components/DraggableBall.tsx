@@ -28,7 +28,7 @@ const DraggableBall = ({
   return (
     <button
       type="button"
-      aria-label="Soccer ball. Drag to move position"
+      aria-label="Soccer ball. Drag to move position or use arrow keys."
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
