@@ -1,7 +1,8 @@
+import { POSITION_BOUNDARIES } from './positionBoundaries';
 import { getRecommendedPosition } from './positioningEngine';
 import type { HeatmapCell, NormalizedPoint, PlayerPosition } from '../types/soccer';
 import { clamp } from '../utils/clamp';
-import { distance } from '../utils/geometry';
+import { distance, isPointInPolygon } from '../utils/geometry';
 import { smoothstep } from '../utils/interpolation';
 
 const CENTRAL_Y = 0.5;
@@ -27,6 +28,9 @@ export const scorePosition = (
   return clamp(score, 0, 100);
 };
 
+export const isPointInsidePositionBoundary = (point: NormalizedPoint, position: PlayerPosition): boolean =>
+  isPointInPolygon(point, POSITION_BOUNDARIES[position].points);
+
 export const getHeatmapCells = (
   ball: NormalizedPoint,
   position: PlayerPosition,
@@ -39,6 +43,11 @@ export const getHeatmapCells = (
     for (let col = 0; col < cols; col += 1) {
       const x = (col + 0.5) / cols;
       const y = (row + 0.5) / rows;
+
+      if (!isPointInsidePositionBoundary({ x, y }, position)) {
+        continue;
+      }
+
       cells.push({ x, y, score: scorePosition({ x, y }, ball, position) });
     }
   }
@@ -47,10 +56,10 @@ export const getHeatmapCells = (
 };
 
 export const heatmapColorForScore = (score: number): string => {
-  if (score >= 90) return 'rgba(20, 83, 45, 0.52)';
-  if (score >= 75) return 'rgba(22, 163, 74, 0.48)';
-  if (score >= 60) return 'rgba(132, 204, 22, 0.45)';
-  if (score >= 45) return 'rgba(250, 204, 21, 0.42)';
-  if (score >= 25) return 'rgba(249, 115, 22, 0.4)';
-  return 'rgba(220, 38, 38, 0.4)';
+  if (score >= 90) return 'rgba(34, 197, 94, 0.68)';
+  if (score >= 75) return 'rgba(132, 204, 22, 0.62)';
+  if (score >= 60) return 'rgba(250, 204, 21, 0.56)';
+  if (score >= 45) return 'rgba(251, 146, 60, 0.5)';
+  if (score >= 25) return 'rgba(239, 68, 68, 0.46)';
+  return 'rgba(185, 28, 28, 0.44)';
 };

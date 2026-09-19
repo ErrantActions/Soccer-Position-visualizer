@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getHeatmapCells, scorePosition } from './heatmapEngine';
+import { getHeatmapCells, isPointInsidePositionBoundary, scorePosition } from './heatmapEngine';
 import { getRecommendedPosition } from './positioningEngine';
 
 describe('heatmap engine', () => {
@@ -19,5 +19,12 @@ describe('heatmap engine', () => {
     const poorScore = scorePosition({ x: 0.95, y: 0.95 }, ball, 'LB');
 
     expect(idealScore).toBeGreaterThan(poorScore);
+  });
+
+  it('only returns heatmap cells inside the selected boundary', () => {
+    const cells = getHeatmapCells({ x: 0.35, y: 0.55 }, 'LB', 14, 10);
+
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.every((cell) => isPointInsidePositionBoundary(cell, 'LB'))).toBe(true);
   });
 });

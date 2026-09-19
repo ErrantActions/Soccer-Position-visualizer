@@ -2,7 +2,7 @@ import { POSITION_BOUNDARIES } from './positionBoundaries';
 import { POSITION_PROFILES } from './positionProfiles';
 import type { PositioningInput, PositioningResult } from '../types/soccer';
 import { clamp } from '../utils/clamp';
-import { isPointInPolygon } from '../utils/geometry';
+import { distance, isPointInPolygon } from '../utils/geometry';
 import { lerp, smoothstep } from '../utils/interpolation';
 
 const CENTRAL_Y = 0.5;
@@ -44,11 +44,26 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const idealPosition = { x: clamp(targetX, 0, 1), y: clamp(targetY, 0, 1) };
   const boundary = POSITION_BOUNDARIES[position];
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
+  const ballInsideBoundary = isPointInPolygon(ball, boundary.points);
+  const ballDistance = distance(idealPosition, ball);
+  const pressureWindow = position === 'CDM' ? 1.15 : 0.95;
+  const isPressDistance = ballDistance <= profile.acceptableRadius * pressureWindow;
+  const ballIsInFront = ball.x >= idealPosition.x - 0.015;
+  const shouldPressBall = ballInsideBoundary && ballIsInFront && isPressDistance;
+  const coachingCue = shouldPressBall
+    ? 'Go win the ball'
+    : isOutsideNormalBoundary
+      ? 'Recover inside your boundary'
+      : ballInsideBoundary
+        ? 'Close space and stay goal side'
+        : 'Hold shape and protect the middle';
 
   return {
     idealPosition,
     confidence,
     acceptableRadius: profile.acceptableRadius,
     isOutsideNormalBoundary,
+    shouldPressBall,
+    coachingCue,
   };
 };

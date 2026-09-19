@@ -40,10 +40,16 @@ const DraggableBall = ({
     >
       <span
         aria-hidden="true"
-        className={`absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-900 bg-white shadow-md ${
-          dragState.isDragging ? 'ring-4 ring-cyan-300/50' : ''
+        className={`absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-lg ${
+          dragState.isDragging ? 'ring-4 ring-cyan-300/50' : 'ring-2 ring-slate-950/10'
         }`}
-      />
+      >
+        <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-900" />
+        <span className="absolute left-1.5 top-2 h-2 w-2 -rotate-12 rounded-[2px] bg-slate-900" />
+        <span className="absolute right-1.5 top-2 h-2 w-2 rotate-12 rounded-[2px] bg-slate-900" />
+        <span className="absolute left-2 bottom-1.5 h-2 w-2 rotate-6 rounded-[2px] bg-slate-900" />
+        <span className="absolute right-2 bottom-1.5 h-2 w-2 -rotate-6 rounded-[2px] bg-slate-900" />
+      </span>
     </button>
   );
 };

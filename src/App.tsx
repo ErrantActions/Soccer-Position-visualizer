@@ -44,6 +44,21 @@ function App() {
           Covering outside the usual {selectedPosition} area.
         </p>
       ) : null}
+      <div
+        className={`rounded-xl border px-4 py-3 shadow-lg ring-1 ${
+          positioning.shouldPressBall
+            ? 'border-rose-300/60 bg-rose-500/15 text-rose-50 ring-rose-200/20'
+            : 'border-slate-700 bg-slate-900/85 text-slate-100 ring-white/10'
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em]">
+            {positioning.shouldPressBall ? 'Pressure cue' : 'Shape cue'}
+          </p>
+          <p className="text-sm text-slate-300">Confidence {Math.round(positioning.confidence)}%</p>
+        </div>
+        <p className="mt-2 text-base font-semibold">{positioning.coachingCue}</p>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <DisplayControls
