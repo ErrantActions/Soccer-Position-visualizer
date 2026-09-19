@@ -12,6 +12,7 @@ type LegacyMediaQueryList = MediaQueryList & {
 const App = () => {
   const [mode, setMode] = useState<AppMode>('explorer');
   const [showOrientationHint, setShowOrientationHint] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
@@ -58,7 +59,7 @@ const App = () => {
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Soccer Positioning Visualizer</p>
               <h1 className="text-lg font-bold text-slate-50 sm:text-xl">Learn shape, spacing, and goal-side defending</h1>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setMode('explorer')}
@@ -77,6 +78,14 @@ const App = () => {
               >
                 Challenge Mode
               </button>
+              <button
+                type="button"
+                onClick={() => setControlsOpen((current) => !current)}
+                aria-expanded={controlsOpen}
+                className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+              >
+                {controlsOpen ? 'Hide Menu' : 'Menu'}
+              </button>
             </div>
           </div>
           {showOrientationHint ? (
@@ -93,7 +102,13 @@ const App = () => {
           ) : null}
         </header>
 
-        <main className="min-h-0 flex-1">{mode === 'explorer' ? <PositionExplorerMode /> : <ChallengeMode />}</main>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          {mode === 'explorer' ? (
+            <PositionExplorerMode isControlsOpen={controlsOpen} onCloseControls={() => setControlsOpen(false)} />
+          ) : (
+            <ChallengeMode isControlsOpen={controlsOpen} onCloseControls={() => setControlsOpen(false)} />
+          )}
+        </main>
       </div>
     </div>
   );

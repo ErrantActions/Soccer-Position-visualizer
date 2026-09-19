@@ -127,10 +127,10 @@ const SoccerField = ({
 
   return (
     <section className="h-full w-full">
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="soccer-field-stage flex h-full w-full items-center justify-center">
         <div
           ref={fieldRef}
-          className="relative h-auto w-full max-h-full max-w-full touch-none select-none overflow-hidden rounded-2xl bg-[#0c4a2d] [aspect-ratio:3/2]"
+          className="soccer-field-frame relative touch-none select-none overflow-hidden rounded-2xl bg-[#0c4a2d]"
         >
           <svg viewBox="0 0 120 80" className="absolute inset-0 h-full w-full" aria-label="Soccer field tactical board">
             <defs>
