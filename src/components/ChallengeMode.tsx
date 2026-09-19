@@ -160,9 +160,8 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">
       {isControlsOpen ? (
-        <button
-          type="button"
-          aria-label="Close menu overlay"
+        <div
+          aria-hidden="true"
           onClick={onCloseControls}
           className="absolute inset-0 z-10 bg-slate-950/70"
         />
@@ -183,6 +182,7 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
       </section>
 
       <aside
+        id="challenge-mode-drawer"
         className={`absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md transition-transform duration-200 ${
           isControlsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
         }`}
