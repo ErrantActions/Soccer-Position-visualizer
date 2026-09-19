@@ -7,7 +7,7 @@ import SoccerField from './components/SoccerField';
 import { getRecommendedPosition } from './engine/positioningEngine';
 import type { DisplaySettings, NormalizedPoint, PlayerPosition } from './types/soccer';
 
-const CENTER_BALL: NormalizedPoint = { x: 0.5, y: 0.5 };
+const createCenterBall = (): NormalizedPoint => ({ x: 0.5, y: 0.5 });
 
 const defaultSettings: DisplaySettings = {
   showHeatmap: true,
@@ -18,7 +18,7 @@ const defaultSettings: DisplaySettings = {
 
 function App() {
   const [selectedPosition, setSelectedPosition] = useState<PlayerPosition>('LB');
-  const [ball, setBall] = useState<NormalizedPoint>(CENTER_BALL);
+  const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
 
   const positioning = useMemo(
@@ -49,7 +49,7 @@ function App() {
         <DisplayControls
           settings={settings}
           onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
-          onResetBall={() => setBall(CENTER_BALL)}
+          onResetBall={() => setBall(createCenterBall())}
         />
         <HeatmapLegend />
       </div>

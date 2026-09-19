@@ -154,12 +154,13 @@ export const useBallDrag = ({ fieldRef, ball, onBallChange }: UseBallDragArgs): 
     return () => {
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
       }
-      flushPendingImmediately();
+      pendingPointRef.current = null;
       document.body.style.userSelect = '';
       document.body.style.webkitUserSelect = '';
     };
-  }, [flushPendingImmediately]);
+  }, []);
 
   return {
     dragState,

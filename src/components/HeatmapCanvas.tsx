@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { getHeatmapCells, heatmapColorForScore } from '../engine/heatmapEngine';
+import { heatmapColorForScore, scorePosition } from '../engine/heatmapEngine';
 import type { FieldDimensions, NormalizedPoint, PlayerPosition } from '../types/soccer';
 
 type HeatmapCanvasProps = {
@@ -45,19 +45,27 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
       return;
     }
 
-    const cells = getHeatmapCells(ball, position, cols, rows);
-    cells.forEach((cell) => {
-      const col = Math.floor(cell.x * cols);
-      const row = Math.floor(cell.y * rows);
-      offCtx.fillStyle = heatmapColorForScore(cell.score);
-      offCtx.fillRect(col, row, 1, 1);
-    });
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const x = (col + 0.5) / cols;
+        const y = (row + 0.5) / rows;
+        const score = scorePosition({ x, y }, ball, position);
+        offCtx.fillStyle = heatmapColorForScore(score);
+        offCtx.fillRect(col, row, 1, 1);
+      }
+    }
 
     context.imageSmoothingEnabled = true;
     context.drawImage(offscreen, 0, 0, dimensions.width, dimensions.height);
   }, [ball, dimensions.dpr, dimensions.height, dimensions.width, position, visible]);
 
-  return <canvas ref={canvasRef} className={`absolute inset-0 z-10 ${visible ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`absolute inset-0 z-10 ${visible ? 'block opacity-100' : 'hidden opacity-0'}`}
+      aria-hidden="true"
+    />
+  );
 };
 
 export default HeatmapCanvas;
