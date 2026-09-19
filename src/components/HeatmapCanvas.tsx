@@ -36,8 +36,8 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
       return;
     }
 
-    const cols = 72;
-    const rows = 48;
+    const cols = 96;
+    const rows = 64;
     const offscreen = document.createElement('canvas');
     offscreen.width = cols;
     offscreen.height = rows;
@@ -61,7 +61,8 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
       }
     }
 
-    context.imageSmoothingEnabled = false;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     const boundary = POSITION_BOUNDARIES[position];
     context.save();
     context.beginPath();
