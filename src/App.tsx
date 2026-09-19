@@ -87,7 +87,7 @@ const App = () => {
                 type="button"
                 onClick={() => setControlsOpen((current) => !current)}
                 aria-expanded={controlsOpen}
-                aria-controls={controlsDrawerId}
+                aria-controls={controlsOpen ? controlsDrawerId : undefined}
                 className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
               >
                 {controlsOpen ? 'Hide Menu' : 'Menu'}
