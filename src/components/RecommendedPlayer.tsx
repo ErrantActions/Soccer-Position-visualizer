@@ -16,12 +16,20 @@ const RecommendedPlayer = ({ position, result }: RecommendedPlayerProps) => {
       aria-label="Recommended player marker"
     >
       <div
-        className={`grid h-10 w-10 place-items-center rounded-full border-2 text-xs font-bold text-white shadow-lg ${
-          result.isOutsideNormalBoundary
-            ? 'border-amber-200 bg-amber-500/90 ring-4 ring-amber-300/30'
-            : 'border-cyan-100 bg-sky-600/95 ring-4 ring-cyan-300/40 motion-safe:animate-pulse'
+        className={`mb-2 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] shadow ${
+          result.shouldPressBall ? 'bg-rose-500/90 text-white' : 'bg-slate-900/80 text-cyan-100'
         }`}
       >
+        {result.shouldPressBall ? 'Press' : 'Shape'}
+      </div>
+      <div
+        className={`relative grid h-12 w-12 place-items-center rounded-full border-2 text-xs font-bold text-white shadow-xl ${
+          result.isOutsideNormalBoundary
+            ? 'border-amber-100 bg-linear-to-br from-amber-300 to-amber-600 ring-4 ring-amber-300/30'
+            : 'border-cyan-100 bg-linear-to-br from-sky-400 to-blue-700 ring-4 ring-cyan-300/40 motion-safe:animate-pulse'
+        }`}
+      >
+        <span className="absolute inset-[5px] rounded-full border border-white/25" />
         {position}
       </div>
     </div>

@@ -21,6 +21,8 @@ export type PositioningResult = {
   confidence: number;
   acceptableRadius: number;
   isOutsideNormalBoundary: boolean;
+  shouldPressBall: boolean;
+  coachingCue: string;
 };
 
 export type HeatmapCell = {

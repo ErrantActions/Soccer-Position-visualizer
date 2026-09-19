@@ -58,4 +58,20 @@ describe('positioning engine', () => {
       0.05,
     );
   });
+
+  it('flags pressure when the ball is in the defender zone and close enough to engage', () => {
+    const ball = { x: 0.28, y: 0.24 };
+    const result = getRecommendedPosition({ ball, position: 'LB' });
+
+    expect(result.shouldPressBall).toBe(true);
+    expect(result.coachingCue).toBe('Go win the ball');
+  });
+
+  it('keeps shape when the ball is outside the defender zone', () => {
+    const ball = { x: 0.82, y: 0.85 };
+    const result = getRecommendedPosition({ ball, position: 'LCB' });
+
+    expect(result.shouldPressBall).toBe(false);
+    expect(result.coachingCue).toBe('Hold shape and protect the middle');
+  });
 });

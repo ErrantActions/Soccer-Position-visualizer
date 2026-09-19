@@ -8,6 +8,7 @@ const HeatmapLegend = () => {
         <span>Acceptable</span>
         <span>Best</span>
       </div>
+      <p className="mt-2 text-xs text-slate-400">Heatmap shading is clipped to the selected player&apos;s area.</p>
     </section>
   );
 };

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { heatmapColorForScore, scorePosition } from '../engine/heatmapEngine';
+import { POSITION_BOUNDARIES } from '../engine/positionBoundaries';
+import { heatmapColorForScore, isPointInsidePositionBoundary, scorePosition } from '../engine/heatmapEngine';
 import type { FieldDimensions, NormalizedPoint, PlayerPosition } from '../types/soccer';
 
 type HeatmapCanvasProps = {
@@ -49,6 +50,11 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
       for (let col = 0; col < cols; col += 1) {
         const x = (col + 0.5) / cols;
         const y = (row + 0.5) / rows;
+
+        if (!isPointInsidePositionBoundary({ x, y }, position)) {
+          continue;
+        }
+
         const score = scorePosition({ x, y }, ball, position);
         offCtx.fillStyle = heatmapColorForScore(score);
         offCtx.fillRect(col, row, 1, 1);
@@ -56,7 +62,23 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
     }
 
     context.imageSmoothingEnabled = false;
+    const boundary = POSITION_BOUNDARIES[position];
+    context.save();
+    context.beginPath();
+    boundary.points.forEach((point, index) => {
+      const px = point.x * dimensions.width;
+      const py = point.y * dimensions.height;
+
+      if (index === 0) {
+        context.moveTo(px, py);
+      } else {
+        context.lineTo(px, py);
+      }
+    });
+    context.closePath();
+    context.clip();
     context.drawImage(offscreen, 0, 0, dimensions.width, dimensions.height);
+    context.restore();
   }, [ball, dimensions.dpr, dimensions.height, dimensions.width, position, visible]);
 
   return (
