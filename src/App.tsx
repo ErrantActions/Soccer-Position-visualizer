@@ -97,6 +97,7 @@ function App() {
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
+      <div aria-hidden={isMenuOpen}>
       <SoccerField
         ball={ball}
         onBallChange={setBall}
