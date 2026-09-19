@@ -27,8 +27,8 @@ describe('legacy positioning wrapper', () => {
     const mirroredBall = { x: ball.x, y: 1 - ball.y };
     const left = getRecommendedPosition({ ball, position: 'LB' });
     const right = getRecommendedPosition({ ball: mirroredBall, position: 'RB' });
-    expect(Math.abs(left.idealPosition.x - right.idealPosition.x)).toBeLessThan(0.05);
-    expect(Math.abs(left.idealPosition.y - (1 - right.idealPosition.y))).toBeLessThan(0.08);
+    expect(left.idealPosition.x).toBeCloseTo(right.idealPosition.x, 6);
+    expect(left.idealPosition.y).toBeCloseTo(1 - right.idealPosition.y, 6);
   });
 
   it('exposes goal-side helper for legacy callers', () => {
@@ -78,6 +78,38 @@ describe('team tactical engine', () => {
 
     expect(team.players).toHaveLength(5);
     expect(team.players.every((player) => ['GK', 'LB', 'LCB', 'RCB', 'RB'].includes(player.player.role))).toBe(true);
+  });
+
+  it('returns the same selected-role answer as the direct tactical model', () => {
+    const ball = { x: 0.61, y: 0.34 };
+    const wrapper = getRecommendedPosition({ ball, position: 'CDM' });
+    const model = buildTeamTacticalModel(
+      {
+        ball,
+        tacticalState: TacticalState.Defending,
+        ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+        learningMode: 'standard',
+        selectedRole: 'CDM',
+      },
+      {
+        formationLabel: 'Legacy Defender View',
+        orientation: 'leftToRight',
+        stylePreset: 'balanced',
+        activePlayers: createDefaultPlayers().filter(
+          (player) =>
+            player.role === 'GK' ||
+            player.role === 'LB' ||
+            player.role === 'LCB' ||
+            player.role === 'RCB' ||
+            player.role === 'RB' ||
+            player.role === 'CDM',
+        ),
+      },
+    );
+
+    const direct = findPlayerResult(model, 'CDM');
+    expect(wrapper.idealPosition.x).toBeCloseTo(direct.finalPosition.x, 6);
+    expect(wrapper.idealPosition.y).toBeCloseTo(direct.finalPosition.y, 6);
   });
 
   it('assigns pressure, cover, and balance when enough active players exist', () => {

@@ -1,5 +1,5 @@
 import { POSITION_BOUNDARIES } from './positionBoundaries';
-import type { PositionProfile } from './positionProfiles';
+import { POSITION_PROFILES, type PositionProfile } from './positionProfiles';
 import type { NormalizedPoint, PlayerPosition, PositioningInput, PositioningResult } from '../types/soccer';
 import { clamp } from '../utils/clamp';
 import { distance, isPointInPolygon } from '../utils/geometry';
@@ -48,7 +48,7 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const selected = findPlayerResult(team, position);
   const boundary = POSITION_BOUNDARIES[position];
   const idealPosition = selected.finalPosition;
-  const acceptableRadius = 0.12;
+  const acceptableRadius = POSITION_PROFILES[position].acceptableRadius;
   const confidence = clamp(Math.round(selected.positioningScore), 0, 100);
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
   const shouldPressBall = selected.responsibility === 'pressure';

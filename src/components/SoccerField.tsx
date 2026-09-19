@@ -154,8 +154,8 @@ const SoccerField = ({
               ? model.dangerMap.map((cell) => (
                   <rect
                     key={`${cell.x}-${cell.y}`}
-                    x={cell.x * 120 - 120 / 36}
-                    y={cell.y * 80 - 80 / 24}
+                    x={cell.x * 120 - 120 / 36 / 2}
+                    y={cell.y * 80 - 80 / 24 / 2}
                     width={120 / 18}
                     height={80 / 12}
                     fill={`rgba(248,113,113,${cell.score * 0.24})`}

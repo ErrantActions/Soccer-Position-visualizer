@@ -40,7 +40,7 @@ export const buildExplanation = (tags: ExplanationTag[], responsibility: Respons
 };
 
 export const pickExplanationTags = (player: PlayerTacticalResult): ExplanationTag[] => {
-  const ordered = player.influences
+  const ordered = [...player.influences]
     .sort((a, b) => b.weight - a.weight)
     .flatMap((influence) => influence.reasonTags);
 

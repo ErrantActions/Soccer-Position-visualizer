@@ -1,5 +1,7 @@
 import { clamp } from '../../utils/clamp';
 import { distance } from '../../utils/geometry';
+import { scoreDangerCoverage } from './danger';
+import { scoreSupport } from './support';
 import type { NormalizedPoint } from '../../types/soccer';
 import type { ChallengeEvaluationResult, ChallengeScenario, PlayerTacticalResult, TeamTacticalResult } from './types';
 
@@ -31,10 +33,11 @@ export const evaluateChallengePlacement = (
   expected: PlayerTacticalResult,
 ): ChallengeEvaluationResult => {
   const distanceYards = distanceInYards(placement, expected.finalPosition);
+  const supportTarget = expected.influences.find((influence) => influence.id === 'supportPosition')?.target ?? expected.finalPosition;
   const shapeScore = clamp(100 - distance(placement, expected.formationAnchor) * 190, 0, 100);
   const goalSideScore = clamp(expected.goalSideScore - Math.max(0, placement.x - expected.finalPosition.x) * 220, 0, 100);
-  const supportScore = clamp(expected.supportScore - distance(placement, expected.finalPosition) * 150, 0, 100);
-  const dangerCoverageScore = clamp(expected.dangerCoverageScore - distance(placement, expected.finalPosition) * 150, 0, 100);
+  const supportScore = scoreSupport(placement, supportTarget);
+  const dangerCoverageScore = scoreDangerCoverage(placement);
   const positioningScore = distanceYards <= 1
     ? 100
     : Math.round((goalSideScore * 0.35 + shapeScore * 0.25 + supportScore * 0.2 + dangerCoverageScore * 0.2));
