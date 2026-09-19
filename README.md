@@ -51,3 +51,10 @@ The Vite config automatically uses the repository name from the GitHub Actions e
 npm run build
 npm run preview
 ```
+
+To preview the same subpath behavior used by GitHub Pages, build with the repository name in the environment first:
+
+```bash
+GITHUB_REPOSITORY=Girthquake/Soccer-Position-visualizer npm run build
+npm run preview
+```
