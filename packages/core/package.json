@@ -1,0 +1,12 @@
+{
+  "name": "@soccer-position-visualizer/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./engine/*": "./src/engine/*.ts",
+    "./types/*": "./src/types/*.ts",
+    "./utils/*": "./src/utils/*.ts"
+  }
+}

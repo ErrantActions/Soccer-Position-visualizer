@@ -1,0 +1,19 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@soccer-position-visualizer/core": ["../../packages/core/src/index.ts"],
+      "@soccer-position-visualizer/core/*": ["../../packages/core/src/*"]
+    }
+  },
+  "include": ["App.tsx", "src"]
+}

@@ -5,6 +5,11 @@
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
     "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@soccer-position-visualizer/core": ["packages/core/src/index.ts"],
+      "@soccer-position-visualizer/core/*": ["packages/core/src/*"]
+    },
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
