@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Canvas, Rect } from '@shopify/react-native-skia';
 import { getHeatmapCells, heatmapColorForScore } from '@soccer-position-visualizer/core/engine/heatmapEngine';
 import type { NormalizedPoint, PlayerPosition } from '@soccer-position-visualizer/core/types/soccer';
@@ -14,13 +15,16 @@ const HEATMAP_COLS = 36;
 const HEATMAP_ROWS = 24;
 
 const HeatmapOverlay = ({ ball, position, width, height, visible }: HeatmapOverlayProps) => {
+  const cells = useMemo(
+    () => getHeatmapCells(ball, position, HEATMAP_COLS, HEATMAP_ROWS),
+    [ball, position],
+  );
+  const cellWidth = width / HEATMAP_COLS;
+  const cellHeight = height / HEATMAP_ROWS;
+
   if (!visible || width <= 0 || height <= 0) {
     return null;
   }
-
-  const cells = getHeatmapCells(ball, position, HEATMAP_COLS, HEATMAP_ROWS);
-  const cellWidth = width / HEATMAP_COLS;
-  const cellHeight = height / HEATMAP_ROWS;
 
   return (
     <Canvas style={{ position: 'absolute', width, height }} pointerEvents="none">
