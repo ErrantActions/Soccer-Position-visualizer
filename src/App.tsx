@@ -23,24 +23,40 @@ function App() {
   const menuPanelRef = useRef<HTMLElement>(null);
   const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
+  const shouldRestoreFocusRef = useRef(true);
 
   const positioning = useMemo(
     () => getRecommendedPosition({ ball, position: selectedPosition }),
     [ball, selectedPosition],
   );
 
+  const openMenu = () => {
+    lastFocusedElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    shouldRestoreFocusRef.current = true;
+    setIsMenuOpen(true);
+  };
+
+  const closeMenu = (restoreFocus = true) => {
+    shouldRestoreFocusRef.current = restoreFocus;
+    setIsMenuOpen(false);
+  };
+
   useEffect(() => {
     if (!isMenuOpen) {
-      lastFocusedElementRef.current?.focus();
+      if (shouldRestoreFocusRef.current) {
+        lastFocusedElementRef.current?.focus();
+      }
+
+      lastFocusedElementRef.current = null;
+      shouldRestoreFocusRef.current = true;
       return;
     }
 
-    lastFocusedElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeMenuButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsMenuOpen(false);
+        closeMenu();
         return;
       }
 
@@ -95,7 +111,7 @@ function App() {
         </div>
         <button
           type="button"
-          onClick={() => setIsMenuOpen(true)}
+          onClick={openMenu}
           aria-expanded={isMenuOpen}
           aria-controls="field-settings-menu"
           className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-slate-950/82 px-4 py-2 text-sm font-semibold text-slate-50 shadow-lg backdrop-blur-md transition hover:bg-slate-900/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
@@ -133,7 +149,7 @@ function App() {
       </div>
 
       {isMenuOpen ? (
-        <div className="absolute inset-0 z-40" onClick={() => setIsMenuOpen(false)}>
+        <div className="absolute inset-0 z-40" onClick={() => closeMenu()}>
           <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" />
           <aside
             id="field-settings-menu"
@@ -155,7 +171,7 @@ function App() {
               <button
                 ref={closeMenuButtonRef}
                 type="button"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => closeMenu(false)}
                 className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
               >
                 Close
