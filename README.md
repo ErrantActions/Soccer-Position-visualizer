@@ -22,9 +22,41 @@ npm install
 npm run dev
 ```
 
+To expose the Vite dev server on your network:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
 ## Quality checks
 
 ```bash
 npm test
 npm run build
 ```
+
+## Deploy with GitHub Pages
+
+This repository can be deployed as a static site with GitHub Pages.
+
+1. Push to the branch configured to run the Pages workflow.
+2. In GitHub repository settings, set **Pages** to deploy from **GitHub Actions**.
+3. The workflow will build the Vite app and publish the `dist` output.
+
+The Vite config automatically uses the repository name from the GitHub Actions environment as the Pages base path so assets resolve correctly even if the repository name changes.
+
+## Preview a production build locally
+
+```bash
+npm run build
+npm run preview
+```
+
+To preview the same subpath behavior used by GitHub Pages, build with the repository name in the environment first:
+
+```bash
+GITHUB_REPOSITORY=Girthquake/Soccer-Position-visualizer npm run build
+npm run preview
+```
+
+Then open `http://localhost:4173/Soccer-Position-visualizer/`.
