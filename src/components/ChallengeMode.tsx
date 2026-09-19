@@ -181,27 +181,26 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
         />
       </section>
 
-      <aside
-        id="challenge-mode-drawer"
-        className={`absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md transition-transform duration-200 ${
-          isControlsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
-        }`}
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
-            <h2 className="mt-1 text-xl font-bold">{scenario.title}</h2>
+      {isControlsOpen ? (
+        <aside
+          id="challenge-mode-drawer"
+          className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
+        >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
+              <h2 className="mt-1 text-xl font-bold">{scenario.title}</h2>
+            </div>
+            <button
+              type="button"
+              onClick={onCloseControls}
+              aria-label="Close challenge controls"
+              className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+            >
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onCloseControls}
-            aria-label="Close challenge controls"
-            className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
-          >
-            Close
-          </button>
-        </div>
-        <p className="text-sm text-slate-300">{scenario.prompt}</p>
+          <p className="text-sm text-slate-300">{scenario.prompt}</p>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
           <p className="text-sm font-semibold">{latestMessage}</p>
@@ -392,8 +391,9 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
               })}
             </div>
           </section>
-        </div>
-      </aside>
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 };
