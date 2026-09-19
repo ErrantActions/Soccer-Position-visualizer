@@ -50,7 +50,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-dvh w-full overflow-x-hidden bg-radial-[at_10%_0%] from-cyan-900/30 via-slate-950 to-slate-950 p-2 sm:p-3 md:p-4">
+    <div className="min-h-dvh w-full overflow-hidden bg-radial-[at_10%_0%] from-cyan-900/30 via-slate-950 to-slate-950 p-2 sm:p-3 md:p-4">
       <div className="mx-auto flex min-h-[calc(100dvh-1rem)] max-w-[1400px] flex-col gap-3 md:min-h-[calc(100dvh-2rem)]">
         <header className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 shadow-xl backdrop-blur-md">
           <div className="flex flex-wrap items-center justify-between gap-3">
