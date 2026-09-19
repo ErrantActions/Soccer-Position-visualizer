@@ -22,11 +22,10 @@ const SoccerField = ({ ball, onBallChange, selectedPosition, positioning, settin
   const drag = useBallDrag({ fieldRef, ball, onBallChange });
 
   return (
-    <section className="rounded-xl bg-slate-900/85 p-2 shadow-lg ring-1 ring-white/10">
+    <section className="h-full w-full">
       <div
         ref={fieldRef}
-        className="relative mx-auto w-full max-w-5xl touch-none select-none overflow-hidden rounded-lg bg-[#0c4a2d]"
-        style={{ aspectRatio: '3 / 2' }}
+        className="relative h-full w-full touch-none select-none overflow-hidden bg-[#0c4a2d]"
       >
         <svg viewBox="0 0 120 80" className="absolute inset-0 h-full w-full" aria-label="Soccer field">
           <defs>
