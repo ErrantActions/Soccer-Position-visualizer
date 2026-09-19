@@ -47,6 +47,8 @@ const PRESS_TUNING: Record<PlayerPosition, PressTuning> = {
 };
 
 const DEFAULT_PRESS_TUNING: PressTuning = { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 };
+const PRESSURE_DANGER_WINDOW_BASE = 1.2;
+const PRESSURE_DANGER_WINDOW_BOOST = 1.4;
 
 export const calculateGoalSidePosition = ({ ball, goal, formation, role, profile }: GoalSideInput): NormalizedPoint => {
   const depthRatio = ROLE_DEPTH_RATIO[role] + (formation === '4-4-2' ? 0 : 0);
@@ -120,7 +122,7 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const ballDistance = distance(idealPosition, ball);
   const pressTuning = PRESS_TUNING[position] ?? DEFAULT_PRESS_TUNING;
   const pressureWindow = pressTuning.baseWindow;
-  const dangerPressureWindow = 1.2 + dangerBoost * 1.4;
+  const dangerPressureWindow = PRESSURE_DANGER_WINDOW_BASE + dangerBoost * PRESSURE_DANGER_WINDOW_BOOST;
   const pressureDistanceLimit = profile.acceptableRadius * Math.max(pressureWindow, dangerPressureWindow);
   const isPressDistance = ballDistance <= pressureDistanceLimit;
   const ballInEngagementChannel =
