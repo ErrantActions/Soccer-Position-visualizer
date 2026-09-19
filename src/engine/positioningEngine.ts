@@ -113,7 +113,8 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
     ball.y >= profile.minY - channelPaddingY &&
     ball.y <= profile.maxY + channelPaddingY;
   const ballIsInFront = ball.x >= idealPosition.x - 0.015;
-  const shouldPressBall = !isOutsideNormalBoundary && ballInEngagementChannel && ballIsInFront && isPressDistance;
+  const shouldPressBall =
+    ballInsideBoundary && !isOutsideNormalBoundary && ballInEngagementChannel && ballIsInFront && isPressDistance;
   const coachingCue = shouldPressBall
     ? 'Go win the ball'
     : ballInsideBoundary
