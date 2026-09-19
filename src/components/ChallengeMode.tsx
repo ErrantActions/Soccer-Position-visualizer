@@ -31,7 +31,7 @@ const defaultSettings: DisplaySettings = {
   showWeakSideShading: true,
 };
 
-const challengeStates = [TacticalState.Defending, TacticalState.TransitionToDefense, TacticalState.Attacking, TacticalState.GoalKick];
+const challengeStates: TacticalState[] = [TacticalState.Defending, TacticalState.TransitionToDefense, TacticalState.Attacking, TacticalState.GoalKick];
 const learningModes: LearningMode[] = ['child', 'standard', 'advanced'];
 
 const getStartingSpot = (role: TacticalRole, players: ActivePlayer[]) => {

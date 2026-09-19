@@ -1,16 +1,17 @@
 import type { NormalizedPoint } from '../../types/soccer';
 
-export enum TacticalState {
-  Defending = 'Defending',
-  Attacking = 'Attacking',
-  TransitionToAttack = 'TransitionToAttack',
-  TransitionToDefense = 'TransitionToDefense',
-  GoalKick = 'GoalKick',
-  CornerKick = 'CornerKick',
-  ThrowIn = 'ThrowIn',
-  FreeKick = 'FreeKick',
-}
+export const TacticalState = {
+  Defending: 'Defending',
+  Attacking: 'Attacking',
+  TransitionToAttack: 'TransitionToAttack',
+  TransitionToDefense: 'TransitionToDefense',
+  GoalKick: 'GoalKick',
+  CornerKick: 'CornerKick',
+  ThrowIn: 'ThrowIn',
+  FreeKick: 'FreeKick',
+} as const;
 
+export type TacticalState = (typeof TacticalState)[keyof typeof TacticalState];
 export type LearningMode = 'child' | 'standard' | 'advanced';
 export type SideAffinity = 'left' | 'center' | 'right';
 export type UnitLine = 'goalkeeper' | 'back' | 'midfield' | 'forward';

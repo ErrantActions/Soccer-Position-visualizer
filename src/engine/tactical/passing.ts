@@ -1,7 +1,7 @@
 import type { NormalizedPoint } from '../../types/soccer';
 import { clamp } from '../../utils/clamp';
 import { distance } from '../../utils/geometry';
-import type { ActivePlayer, PassingLane, RoleBehaviorProfile, TacticalContext } from './types';
+import type { PassingLane, RoleBehaviorProfile, TacticalContext } from './types';
 
 const laneTargets = [
   { x: 0.2, y: 0.5 },
@@ -27,7 +27,6 @@ const projectPointToSegment = (point: NormalizedPoint, start: NormalizedPoint, e
 };
 
 export const getPassingLaneTarget = (
-  player: ActivePlayer,
   profile: RoleBehaviorProfile,
   lanes: PassingLane[],
 ): NormalizedPoint => {

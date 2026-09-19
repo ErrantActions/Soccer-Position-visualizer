@@ -6,13 +6,7 @@ import { distance, isPointInPolygon } from '../utils/geometry';
 import { buildTeamTacticalModel, createDefaultPlayers, findPlayerResult, getBallCarrierTeam } from './tactical';
 import { calculateGoalSidePosition as calculateTeamGoalSidePosition } from './tactical/goalSide';
 import { ROLE_BEHAVIOR_PROFILES } from './tactical/roles';
-import { TacticalState, type ActivePlayer } from './tactical/types';
-
-const legacyPlayerLookup: Record<PlayerPosition, ActivePlayer> = Object.fromEntries(
-  createDefaultPlayers()
-    .filter((player) => player.role === 'LB' || player.role === 'LCB' || player.role === 'RCB' || player.role === 'RB' || player.role === 'CDM')
-    .map((player) => [player.role, player]),
-) as Record<PlayerPosition, ActivePlayer>;
+import { TacticalState } from './tactical/types';
 
 type GoalSideInput = {
   ball: NormalizedPoint;
@@ -23,9 +17,8 @@ type GoalSideInput = {
 };
 
 export const calculateGoalSidePosition = ({ ball, role }: GoalSideInput): NormalizedPoint => {
-  const player = legacyPlayerLookup[role];
   const profile = ROLE_BEHAVIOR_PROFILES[role];
-  return calculateTeamGoalSidePosition(player, profile, {
+  return calculateTeamGoalSidePosition(profile, {
     ball,
     ballCarrierTeam: 'opponent',
     tacticalState: TacticalState.Defending,

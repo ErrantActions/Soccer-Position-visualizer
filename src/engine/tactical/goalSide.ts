@@ -1,12 +1,11 @@
 import type { NormalizedPoint } from '../../types/soccer';
 import { clamp } from '../../utils/clamp';
 import { lerp, smoothstep } from '../../utils/interpolation';
-import type { ActivePlayer, RoleBehaviorProfile, TacticalContext } from './types';
+import type { RoleBehaviorProfile, TacticalContext } from './types';
 
 const GOAL = { x: 0, y: 0.5 };
 
 export const calculateGoalSidePosition = (
-  player: ActivePlayer,
   profile: RoleBehaviorProfile,
   context: TacticalContext,
 ): NormalizedPoint => {

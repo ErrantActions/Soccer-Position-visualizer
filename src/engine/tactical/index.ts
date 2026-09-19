@@ -11,16 +11,7 @@ import { TACTICAL_STATE_PROFILES } from './state';
 import { measureCompactness, getCompactnessTarget } from './compactness';
 import { buildSupportTriangles, getSupportTarget, scoreSupport } from './support';
 import { getTacticalZone } from './zones';
-import type {
-  ActivePlayer,
-  PlayerTacticalResult,
-  PositionInfluence,
-  TacticalContext,
-  TacticalRole,
-  TacticalState,
-  TeamShapeConfig,
-  TeamTacticalResult,
-} from './types';
+import { TacticalState, type ActivePlayer, type PlayerTacticalResult, type PositionInfluence, type TacticalContext, type TacticalRole, type TeamShapeConfig, type TeamTacticalResult } from './types';
 
 const defaultTeamShape: TeamShapeConfig = {
   formationLabel: '4-4-1-1',
@@ -110,9 +101,9 @@ export const buildTeamTacticalModel = (
     const stateProfile = TACTICAL_STATE_PROFILES[context.tacticalState];
     const formationAnchor = profile.anchor;
     const stateTarget = getStateModifier(formationAnchor, context);
-    const goalSideTarget = calculateGoalSidePosition(player, profile, context);
+    const goalSideTarget = calculateGoalSidePosition(profile, context);
     const dangerTarget = getDangerZoneTarget(player, profile, context);
-    const passingLaneTarget = getPassingLaneTarget(player, profile, lanes);
+    const passingLaneTarget = getPassingLaneTarget(profile, lanes);
     const responsibility = responsibilities[player.id];
     const responsibilityTarget =
       responsibility === 'pressure'
