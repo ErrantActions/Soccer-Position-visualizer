@@ -195,6 +195,7 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
           <button
             type="button"
             onClick={onCloseControls}
+            aria-label="Close challenge controls"
             className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
           >
             Close

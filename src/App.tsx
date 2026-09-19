@@ -39,6 +39,10 @@ const App = () => {
     return undefined;
   }, []);
 
+  useEffect(() => {
+    setControlsOpen(false);
+  }, [mode]);
+
   const requestLandscape = async () => {
     if (!('orientation' in screen) || !('lock' in screen.orientation)) {
       return;
