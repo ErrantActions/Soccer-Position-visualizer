@@ -46,6 +46,8 @@ const PRESS_TUNING: Record<PlayerPosition, PressTuning> = {
   CDM: { baseWindow: 1.55, xPadding: 0.06, yPadding: 0.05, forwardAllowance: 0.1 },
 };
 
+const DEFAULT_PRESS_TUNING: PressTuning = { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 };
+
 export const calculateGoalSidePosition = ({ ball, goal, formation, role, profile }: GoalSideInput): NormalizedPoint => {
   const depthRatio = ROLE_DEPTH_RATIO[role] + (formation === '4-4-2' ? 0 : 0);
   const lateralRatio = ROLE_LATERAL_RATIO[role];
@@ -116,7 +118,7 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
   const ballInsideBoundary = isPointInPolygon(ball, boundary.points);
   const ballDistance = distance(idealPosition, ball);
-  const pressTuning = PRESS_TUNING[position];
+  const pressTuning = PRESS_TUNING[position] ?? DEFAULT_PRESS_TUNING;
   const pressureWindow = pressTuning.baseWindow;
   const dangerPressureWindow = 1.2 + dangerBoost * 1.4;
   const pressureDistanceLimit = profile.acceptableRadius * Math.max(pressureWindow, dangerPressureWindow);
