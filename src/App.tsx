@@ -4,20 +4,37 @@ import PositionExplorerMode from './components/PositionExplorerMode';
 
 type AppMode = 'explorer' | 'challenge';
 
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+};
+
 const App = () => {
   const [mode, setMode] = useState<AppMode>('explorer');
   const [showOrientationHint, setShowOrientationHint] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    const legacyMedia = media as LegacyMediaQueryList;
     const update = () => setShowOrientationHint(media.matches);
 
     update();
-    media.addEventListener('change', update);
 
-    return () => {
-      media.removeEventListener('change', update);
-    };
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', update);
+      return () => {
+        media.removeEventListener('change', update);
+      };
+    }
+
+    if (typeof legacyMedia.addListener === 'function' && typeof legacyMedia.removeListener === 'function') {
+      legacyMedia.addListener(update);
+      return () => {
+        legacyMedia.removeListener?.(update);
+      };
+    }
+
+    return undefined;
   }, []);
 
   const requestLandscape = async () => {

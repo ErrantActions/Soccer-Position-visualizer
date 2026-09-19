@@ -149,6 +149,10 @@ const ChallengeMode = () => {
   };
 
   const nextChallenge = () => {
+    if (CHALLENGES.length === 0) {
+      return;
+    }
+
     setChallengeIndex((current) => (current + 1) % CHALLENGES.length);
   };
 
