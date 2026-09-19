@@ -1,1 +1,1 @@
-export { clamp, clamp01 } from '@soccer-position-visualizer/core/utils/clamp';
+export { clamp, clamp01 } from '../../packages/core/src/utils/clamp';

@@ -1,1 +1,1 @@
-export { lerp, smoothstep } from '@soccer-position-visualizer/core/utils/interpolation';
+export { lerp, smoothstep } from '../../packages/core/src/utils/interpolation';

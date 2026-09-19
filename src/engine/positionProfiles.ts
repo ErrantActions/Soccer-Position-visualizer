@@ -1,1 +1,1 @@
-export { POSITION_PROFILES } from '@soccer-position-visualizer/core/engine/positionProfiles';
+export { POSITION_PROFILES } from '../../packages/core/src/engine/positionProfiles';

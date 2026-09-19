@@ -1,1 +1,1 @@
-export { getHeatmapCells, heatmapColorForScore, scorePosition } from '@soccer-position-visualizer/core/engine/heatmapEngine';
+export { getHeatmapCells, heatmapColorForScore, scorePosition } from '../../packages/core/src/engine/heatmapEngine';

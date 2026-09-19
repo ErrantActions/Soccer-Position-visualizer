@@ -1,1 +1,1 @@
-export { POSITION_BOUNDARIES } from '@soccer-position-visualizer/core/engine/positionBoundaries';
+export { POSITION_BOUNDARIES } from '../../packages/core/src/engine/positionBoundaries';

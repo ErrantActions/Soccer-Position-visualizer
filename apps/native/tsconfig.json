@@ -9,7 +9,6 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "@soccer-position-visualizer/core": ["../../packages/core/src/index.ts"],
       "@soccer-position-visualizer/core/*": ["../../packages/core/src/*"]

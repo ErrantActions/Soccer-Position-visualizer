@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   PanResponder,
   StyleSheet,
@@ -51,17 +51,20 @@ const NativeSoccerField = ({
 }: NativeSoccerFieldProps) => {
   const [layout, setLayout] = useState<FieldLayout>({ width: 0, height: 0 });
 
-  const updateBallFromTouch = (event: GestureResponderEvent) => {
-    if (layout.width === 0 || layout.height === 0) {
-      return;
-    }
+  const updateBallFromTouch = useCallback(
+    (event: GestureResponderEvent) => {
+      if (layout.width === 0 || layout.height === 0) {
+        return;
+      }
 
-    const { locationX, locationY } = event.nativeEvent;
-    onBallChange({
-      x: clamp01(locationX / layout.width),
-      y: clamp01(locationY / layout.height),
-    });
-  };
+      const { locationX, locationY } = event.nativeEvent;
+      onBallChange({
+        x: clamp01(locationX / layout.width),
+        y: clamp01(locationY / layout.height),
+      });
+    },
+    [layout.height, layout.width, onBallChange],
+  );
 
   const panResponder = useMemo(
     () =>
@@ -72,7 +75,7 @@ const NativeSoccerField = ({
         onPanResponderMove: updateBallFromTouch,
         onPanResponderRelease: updateBallFromTouch,
       }),
-    [layout.height, layout.width],
+    [updateBallFromTouch],
   );
 
   const handleLayout = (event: LayoutChangeEvent) => {

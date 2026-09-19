@@ -8,4 +8,4 @@ export type {
   PositionBoundary,
   PositioningInput,
   PositioningResult,
-} from '@soccer-position-visualizer/core/types/soccer';
+} from '../../packages/core/src/types/soccer';
