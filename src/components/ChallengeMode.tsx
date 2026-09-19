@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEventHandler } from 'react';
 import { CHALLENGES } from '../challenge/challenges';
 import { scoreChallenge } from '../challenge/scoring';
 import { BADGES, createDefaultProfile, createDefaultProgress, loadProfile, loadProgress, saveProfile, saveProgress } from '../challenge/storage';
@@ -152,13 +153,13 @@ const ChallengeMode = () => {
     setPlayerPosition({ x: clamp01(point.x), y: clamp01(point.y) });
   };
 
-  const handlePointerDown: React.PointerEventHandler<HTMLButtonElement> = (event) => {
+  const handlePointerDown: PointerEventHandler<HTMLButtonElement> = (event) => {
     pointerIdRef.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
     updateFromPointer(event.clientX, event.clientY);
   };
 
-  const handlePointerMove: React.PointerEventHandler<HTMLButtonElement> = (event) => {
+  const handlePointerMove: PointerEventHandler<HTMLButtonElement> = (event) => {
     if (pointerIdRef.current !== event.pointerId) {
       return;
     }
@@ -166,7 +167,7 @@ const ChallengeMode = () => {
     updateFromPointer(event.clientX, event.clientY);
   };
 
-  const handlePointerRelease: React.PointerEventHandler<HTMLButtonElement> = (event) => {
+  const handlePointerRelease: PointerEventHandler<HTMLButtonElement> = (event) => {
     if (pointerIdRef.current !== event.pointerId) {
       return;
     }

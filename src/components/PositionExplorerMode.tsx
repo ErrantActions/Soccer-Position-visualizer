@@ -111,12 +111,7 @@ const PositionExplorerMode = () => {
           settings={settings}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-3 sm:p-4">
-          <div className="pointer-events-auto max-w-sm rounded-xl border border-white/10 bg-slate-950/78 px-4 py-3 text-slate-100 shadow-lg backdrop-blur-md">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Position Explorer</p>
-            <p className="mt-1 text-lg font-semibold">{selectedPosition} defensive view</p>
-            <p className="mt-1 text-sm text-slate-300">Drag the ball and use the menu to switch positions or overlays.</p>
-          </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end p-3 sm:p-4">
           <button
             type="button"
             onClick={openMenu}
@@ -176,6 +171,11 @@ const PositionExplorerMode = () => {
                   Field settings
                 </h1>
                 <p className="mt-1 text-sm text-slate-300">Change the defender, overlays, and ball state without leaving the field.</p>
+                <div className="mt-3 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Position Explorer</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-100">{selectedPosition} defensive view</p>
+                  <p className="text-xs text-slate-300">Drag the ball freely and keep your shape goal side.</p>
+                </div>
               </div>
               <button
                 ref={closeMenuButtonRef}

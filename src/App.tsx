@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ChallengeMode from './components/ChallengeMode';
 import PositionExplorerMode from './components/PositionExplorerMode';
 
@@ -6,13 +6,18 @@ type AppMode = 'explorer' | 'challenge';
 
 const App = () => {
   const [mode, setMode] = useState<AppMode>('explorer');
+  const [showOrientationHint, setShowOrientationHint] = useState(false);
 
-  const orientationHint = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    const update = () => setShowOrientationHint(media.matches);
 
-    return window.matchMedia('(max-width: 900px) and (orientation: portrait)').matches;
+    update();
+    media.addEventListener('change', update);
+
+    return () => {
+      media.removeEventListener('change', update);
+    };
   }, []);
 
   const requestLandscape = async () => {
@@ -59,7 +64,7 @@ const App = () => {
               </button>
             </div>
           </div>
-          {orientationHint ? (
+          {showOrientationHint ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-500/15 px-3 py-2 text-sm text-amber-100">
               <span>For more field space, rotate your phone to landscape.</span>
               <button
