@@ -91,12 +91,12 @@ describe('positioning engine', () => {
     expect(helper.y).toBeLessThanOrEqual(POSITION_PROFILES.LCB.maxY);
   });
 
-  it('flags pressure when the ball is in the defender zone and close enough to engage', () => {
+  it('prefers shape over over-committing when engagement is risky', () => {
     const ball = { x: 0.28, y: 0.24 };
     const result = getRecommendedPosition({ ball, position: 'LB' });
 
-    expect(result.shouldPressBall).toBe(true);
-    expect(result.coachingCue).toBe('Go win the ball');
+    expect(result.shouldPressBall).toBe(false);
+    expect(result.coachingCue).toBe('Recover inside your boundary');
   });
 
   it('keeps shape when the ball is outside the defender zone', () => {

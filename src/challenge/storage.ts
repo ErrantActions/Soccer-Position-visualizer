@@ -85,11 +85,11 @@ export const loadProgress = (): ChallengeProgress => {
         : [],
       bestScores:
         parsed.bestScores && typeof parsed.bestScores === 'object'
-          ? Object.fromEntries(
+          ? (Object.fromEntries(
               Object.entries(parsed.bestScores as Record<string, unknown>).filter(
                 ([challengeId, score]) => typeof challengeId === 'string' && typeof score === 'number',
               ),
-            )
+            ) as Record<string, number>)
           : {},
       goalSidePerfectChallengeIds: Array.isArray(parsed.goalSidePerfectChallengeIds)
         ? parsed.goalSidePerfectChallengeIds.filter((id): id is string => typeof id === 'string')
