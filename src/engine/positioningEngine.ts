@@ -131,15 +131,16 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
     ball.y >= profile.minY - pressTuning.yPadding &&
     ball.y <= profile.maxY + pressTuning.yPadding;
   const ballIsInFront = ball.x >= idealPosition.x - 0.015;
-  const shouldPressBall =
-    ballInsideBoundary && !isOutsideNormalBoundary && ballInEngagementChannel && ballIsInFront && isPressDistance;
+  const canEngageBall = ballInsideBoundary && ballInEngagementChannel && ballIsInFront && isPressDistance;
+  const shouldPressBall = canEngageBall;
+  const needsBoundaryRecovery = ballInsideBoundary && isOutsideNormalBoundary && !canEngageBall;
   const coachingCue = shouldPressBall
     ? 'Go win the ball'
-    : ballInsideBoundary
-      ? isOutsideNormalBoundary
-        ? 'Recover inside your boundary'
-        : 'Close space and stay goal side'
-      : 'Hold shape and protect the middle';
+    : needsBoundaryRecovery
+      ? 'Recover inside your boundary'
+      : ballInsideBoundary
+        ? 'Close space and stay goal side'
+        : 'Hold shape and protect the middle';
 
   return {
     idealPosition,
