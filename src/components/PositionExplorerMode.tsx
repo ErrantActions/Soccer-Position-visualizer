@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DisplayControls from './DisplayControls';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
@@ -31,13 +31,19 @@ const defaultSettings: DisplaySettings = {
 const stateOptions = Object.values(TacticalState);
 const learningModes: LearningMode[] = ['child', 'standard', 'advanced'];
 
-const PositionExplorerMode = () => {
+type PositionExplorerModeProps = {
+  isControlsOpen: boolean;
+  onCloseControls: () => void;
+};
+
+const PositionExplorerMode = ({ isControlsOpen, onCloseControls }: PositionExplorerModeProps) => {
   const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
   const [tacticalState, setTacticalState] = useState<TacticalState>(TacticalState.Defending);
   const [learningMode, setLearningMode] = useState<LearningMode>('standard');
   const [players, setPlayers] = useState<ActivePlayer[]>(() => createDefaultPlayers());
   const [selectedRole, setSelectedRole] = useState<TacticalRole>('LB');
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const activeRoles = useMemo(
     () => players.filter((player) => player.active).map((player) => player.role),
@@ -49,6 +55,12 @@ const PositionExplorerMode = () => {
       setSelectedRole(activeRoles[0]);
     }
   }, [activeRoles, selectedRole]);
+
+  useEffect(() => {
+    if (isControlsOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isControlsOpen]);
 
   const safeSelectedRole = activeRoles.includes(selectedRole) ? selectedRole : activeRoles[0] ?? 'GK';
 
@@ -75,49 +87,78 @@ const PositionExplorerMode = () => {
   const selectedPlayer = model.players.find((player) => player.player.role === safeSelectedRole) ?? model.players[0];
 
   return (
-    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.9fr)]">
-      <section className="min-h-[48dvh] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
+    <div className="relative h-full min-h-0 overflow-hidden">
+      {isControlsOpen ? (
+        <div
+          aria-hidden="true"
+          onClick={onCloseControls}
+          className="absolute inset-0 z-10 bg-slate-950/70"
+        />
+      ) : null}
+
+      <section className="h-full min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
         <SoccerField ball={ball} onBallChange={setBall} model={model} selectedRole={safeSelectedRole} settings={settings} />
       </section>
 
-      <aside className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/72 p-4 text-slate-100 shadow-2xl backdrop-blur-md">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Position Explorer</p>
-        <h2 className="mt-1 text-xl font-bold">Team state + learner role</h2>
-        <p className="mt-1 text-sm text-slate-300">Move the ball, change the tactical state, and see how every active player adjusts together.</p>
+      <aside
+        id="position-explorer-drawer"
+        hidden={!isControlsOpen}
+        aria-hidden={!isControlsOpen}
+        role="dialog"
+        aria-modal={isControlsOpen ? 'true' : undefined}
+        aria-labelledby="position-explorer-drawer-title"
+        className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
+      >
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Position Explorer</p>
+              <h2 id="position-explorer-drawer-title" className="mt-1 text-xl font-bold">Team state + learner role</h2>
+            </div>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onCloseControls}
+              aria-label="Close position explorer controls"
+              className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+            >
+              Close
+            </button>
+          </div>
+          <p className="text-sm text-slate-300">Move the ball, change the tactical state, and see how every active player adjusts together.</p>
 
-        <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
-          <p className="text-sm font-semibold">Selected learner</p>
-          {selectedPlayer ? (
-            <>
-              <p className="mt-1 text-sm text-slate-300">{ROLE_LABELS[selectedPlayer.player.role]}</p>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
-                  <p className="text-slate-400">Goal side</p>
-                  <p className="font-semibold text-emerald-300">{selectedPlayer.goalSideScore}</p>
+          <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
+            <p className="text-sm font-semibold">Selected learner</p>
+            {selectedPlayer ? (
+              <>
+                <p className="mt-1 text-sm text-slate-300">{ROLE_LABELS[selectedPlayer.player.role]}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                    <p className="text-slate-400">Goal side</p>
+                    <p className="font-semibold text-emerald-300">{selectedPlayer.goalSideScore}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                    <p className="text-slate-400">Shape</p>
+                    <p className="font-semibold text-cyan-300">{selectedPlayer.shapeScore}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                    <p className="text-slate-400">Support</p>
+                    <p className="font-semibold text-violet-300">{selectedPlayer.supportScore}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                    <p className="text-slate-400">Positioning</p>
+                    <p className="font-semibold text-amber-300">{selectedPlayer.positioningScore}</p>
+                  </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
-                  <p className="text-slate-400">Shape</p>
-                  <p className="font-semibold text-cyan-300">{selectedPlayer.shapeScore}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
-                  <p className="text-slate-400">Support</p>
-                  <p className="font-semibold text-violet-300">{selectedPlayer.supportScore}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
-                  <p className="text-slate-400">Positioning</p>
-                  <p className="font-semibold text-amber-300">{selectedPlayer.positioningScore}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm font-semibold text-slate-100">{selectedPlayer.explanation.primary}</p>
-              <p className="mt-1 text-sm text-slate-300">{learningMode === 'child' ? selectedPlayer.explanation.childFriendly : selectedPlayer.explanation.secondary}</p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-slate-300">Activate at least one role to see guidance.</p>
-          )}
-        </div>
+                <p className="mt-3 text-sm font-semibold text-slate-100">{selectedPlayer.explanation.primary}</p>
+                <p className="mt-1 text-sm text-slate-300">{learningMode === 'child' ? selectedPlayer.explanation.childFriendly : selectedPlayer.explanation.secondary}</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-slate-300">Activate at least one role to see guidance.</p>
+            )}
+          </div>
 
-        <div className="mt-4 grid gap-3">
-          <PositionSelector value={safeSelectedRole} options={activeRoles} onChange={setSelectedRole} />
+          <div className="mt-4 grid gap-3">
+            <PositionSelector value={safeSelectedRole} options={activeRoles} onChange={setSelectedRole} />
 
           <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Tactical state</p>
@@ -193,7 +234,7 @@ const PositionExplorerMode = () => {
               ))}
             </div>
           </section>
-        </div>
+          </div>
       </aside>
     </div>
   );

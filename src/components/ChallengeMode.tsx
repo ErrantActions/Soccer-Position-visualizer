@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DisplayControls from './DisplayControls';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
@@ -34,6 +34,11 @@ const defaultSettings: DisplaySettings = {
 const challengeStates: TacticalState[] = [TacticalState.Defending, TacticalState.TransitionToDefense, TacticalState.Attacking, TacticalState.GoalKick];
 const learningModes: LearningMode[] = ['child', 'standard', 'advanced'];
 
+type ChallengeModeProps = {
+  isControlsOpen: boolean;
+  onCloseControls: () => void;
+};
+
 const getStartingSpot = (role: TacticalRole, players: ActivePlayer[]) => {
   const match = players.find((player) => player.role === role);
   return match ? { x: match.role === 'GK' ? 0.08 : match.side === 'left' ? 0.24 : match.side === 'right' ? 0.76 : 0.5, y: match.side === 'left' ? 0.22 : match.side === 'right' ? 0.78 : 0.5 } : { x: 0.5, y: 0.5 };
@@ -48,7 +53,7 @@ const updateBadges = (progress: ChallengeProgress): BadgeId[] => {
   return [...badges];
 };
 
-const ChallengeMode = () => {
+const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) => {
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile());
   const [progress, setProgress] = useState<ChallengeProgress>(() => loadProgress());
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
@@ -60,6 +65,7 @@ const ChallengeMode = () => {
   const [latestMessage, setLatestMessage] = useState('Place yourself, then check your tactical position.');
   const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof evaluateChallengePlacement> | null>(null);
   const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(() => getStartingSpot(loadProfile().favoritePosition, createDefaultPlayers()));
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     saveProfile(profile);
@@ -121,6 +127,12 @@ const ChallengeMode = () => {
     setLatestMessage('Find the best team-connected spot before you reveal the answer.');
   }, [scenario.id]);
 
+  useEffect(() => {
+    if (isControlsOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isControlsOpen]);
+
   const checkAnswer = () => {
     const result = evaluateChallengePlacement(playerPosition, expectedPlayer);
     setScoreBreakdown(result);
@@ -153,8 +165,16 @@ const ChallengeMode = () => {
   };
 
   return (
-    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)]">
-      <section className="min-h-[48dvh] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
+    <div className="relative h-full min-h-0 overflow-hidden">
+      {isControlsOpen ? (
+        <div
+          aria-hidden="true"
+          onClick={onCloseControls}
+          className="absolute inset-0 z-10 bg-slate-950/70"
+        />
+      ) : null}
+
+      <section className="h-full min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
         <SoccerField
           ball={ball}
           onBallChange={() => undefined}
@@ -168,10 +188,31 @@ const ChallengeMode = () => {
         />
       </section>
 
-      <aside className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/72 p-4 text-slate-100 shadow-2xl backdrop-blur-md">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
-        <h2 className="mt-1 text-xl font-bold">{scenario.title}</h2>
-        <p className="mt-1 text-sm text-slate-300">{scenario.prompt}</p>
+      <aside
+        id="challenge-mode-drawer"
+        hidden={!isControlsOpen}
+        aria-hidden={!isControlsOpen}
+        role="dialog"
+        aria-modal={isControlsOpen ? 'true' : undefined}
+        aria-labelledby="challenge-mode-drawer-title"
+        className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
+      >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
+              <h2 id="challenge-mode-drawer-title" className="mt-1 text-xl font-bold">{scenario.title}</h2>
+            </div>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onCloseControls}
+              aria-label="Close challenge controls"
+              className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+            >
+              Close
+            </button>
+          </div>
+          <p className="text-sm text-slate-300">{scenario.prompt}</p>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
           <p className="text-sm font-semibold">{latestMessage}</p>
@@ -362,7 +403,7 @@ const ChallengeMode = () => {
               })}
             </div>
           </section>
-        </div>
+          </div>
       </aside>
     </div>
   );
