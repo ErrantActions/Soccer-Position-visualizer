@@ -49,7 +49,14 @@ const isPlayerPosition = (value: unknown): value is PlayerPosition =>
   value === 'LB' || value === 'LCB' || value === 'RCB' || value === 'RB' || value === 'CDM';
 
 export const loadProfile = (): PlayerProfile => {
-  const raw = localStorage.getItem(PROFILE_KEY);
+  let raw: string | null = null;
+
+  try {
+    raw = localStorage.getItem(PROFILE_KEY);
+  } catch {
+    return createDefaultProfile();
+  }
+
   if (!raw) {
     return createDefaultProfile();
   }
@@ -75,7 +82,14 @@ export const saveProfile = (profile: PlayerProfile): void => {
 };
 
 export const loadProgress = (): ChallengeProgress => {
-  const raw = localStorage.getItem(PROGRESS_KEY);
+  let raw: string | null = null;
+
+  try {
+    raw = localStorage.getItem(PROGRESS_KEY);
+  } catch {
+    return createDefaultProgress();
+  }
+
   if (!raw) {
     return createDefaultProgress();
   }

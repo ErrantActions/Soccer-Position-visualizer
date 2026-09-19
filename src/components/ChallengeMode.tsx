@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEventHandler } from 'react';
+import type { KeyboardEventHandler, PointerEventHandler } from 'react';
 import { CHALLENGES } from '../challenge/challenges';
 import { scoreChallenge } from '../challenge/scoring';
-import { BADGES, createDefaultProfile, createDefaultProgress, loadProfile, loadProgress, saveProfile, saveProgress } from '../challenge/storage';
+import { BADGES, loadProfile, loadProgress, saveProfile, saveProgress } from '../challenge/storage';
 import type { BadgeId, ChallengeProgress, PlayerProfile } from '../challenge/types';
 import { POSITION_PROFILES } from '../engine/positionProfiles';
 import { getRecommendedPosition } from '../engine/positioningEngine';
@@ -51,8 +51,8 @@ const ChallengeMode = () => {
   const markerRef = useRef<HTMLButtonElement>(null);
   const pointerIdRef = useRef<number | null>(null);
 
-  const [profile, setProfile] = useState<PlayerProfile>(() => createDefaultProfile());
-  const [progress, setProgress] = useState<ChallengeProgress>(() => createDefaultProgress());
+  const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile());
+  const [progress, setProgress] = useState<ChallengeProgress>(() => loadProgress());
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot(CHALLENGES[0]?.playerRole ?? 'LB'));
   const [showWhy, setShowWhy] = useState(false);
@@ -77,11 +77,6 @@ const ChallengeMode = () => {
     () => getRecommendedPosition({ ball: challenge.ballPosition, position: challenge.supportTeammate }).idealPosition,
     [challenge.ballPosition, challenge.supportTeammate],
   );
-
-  useEffect(() => {
-    setProfile(loadProfile());
-    setProgress(loadProgress());
-  }, []);
 
   useEffect(() => {
     saveProfile(profile);
@@ -129,8 +124,10 @@ const ChallengeMode = () => {
         ? current.completedChallengeIds
         : [...current.completedChallengeIds, challenge.id];
 
-      const bestScoreForChallenge = Math.max(current.bestScores[challenge.id] ?? 0, result.points);
+      const previousBest = current.bestScores[challenge.id] ?? 0;
+      const bestScoreForChallenge = Math.max(previousBest, result.points);
       const bestScores = { ...current.bestScores, [challenge.id]: bestScoreForChallenge };
+      const scoreImprovement = Math.max(0, bestScoreForChallenge - previousBest);
 
       const goalSidePerfectChallengeIds =
         result.points === 100 && roleChecks.goalSide && !current.goalSidePerfectChallengeIds.includes(challenge.id)
@@ -142,7 +139,7 @@ const ChallengeMode = () => {
         completedChallengeIds,
         bestScores,
         goalSidePerfectChallengeIds,
-        totalScore: current.totalScore + result.points,
+        totalScore: current.totalScore + scoreImprovement,
         badges: current.badges,
       };
 
@@ -163,6 +160,40 @@ const ChallengeMode = () => {
 
     const point = toNormalizedPoint(clientX, clientY, rect);
     setPlayerPosition({ x: clamp01(point.x), y: clamp01(point.y) });
+  };
+
+  const nudgePlayer = (dx: number, dy: number) => {
+    setPlayerPosition((current) => ({
+      x: clamp01(current.x + dx),
+      y: clamp01(current.y + dy),
+    }));
+  };
+
+  const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+    const step = event.shiftKey ? 0.04 : 0.02;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      nudgePlayer(-step, 0);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nudgePlayer(step, 0);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      nudgePlayer(0, -step);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      nudgePlayer(0, step);
+    }
   };
 
   const handlePointerDown: PointerEventHandler<HTMLButtonElement> = (event) => {
@@ -280,6 +311,7 @@ const ChallengeMode = () => {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerRelease}
             onPointerCancel={handlePointerRelease}
+            onKeyDown={handleKeyDown}
             className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-100 bg-amber-500 font-bold text-slate-950 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
             style={{ left: playerPct.left, top: playerPct.top, touchAction: 'none' }}
           >
