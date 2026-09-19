@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { NormalizedPoint, PositioningResult } from '../types/soccer';
 
 type TacticalGuidesProps = {
@@ -7,6 +8,7 @@ type TacticalGuidesProps = {
 
 const TacticalGuides = ({ ball, positioning }: TacticalGuidesProps) => {
   const player = positioning.idealPosition;
+  const markerId = useId();
 
   return (
     <g aria-label="Tactical guides" pointerEvents="none">
@@ -19,7 +21,7 @@ const TacticalGuides = ({ ball, positioning }: TacticalGuidesProps) => {
         y2={ball.y * 80}
         stroke="rgba(14, 165, 233, 0.8)"
         strokeWidth="1"
-        markerEnd="url(#arrowhead)"
+        markerEnd={`url(#${markerId})`}
       />
       <line
         x1={ball.x * 120}
@@ -28,10 +30,10 @@ const TacticalGuides = ({ ball, positioning }: TacticalGuidesProps) => {
         y2={player.y * 80}
         stroke="rgba(96, 165, 250, 0.95)"
         strokeWidth="1"
-        markerEnd="url(#arrowhead)"
+        markerEnd={`url(#${markerId})`}
       />
       <defs>
-        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="4" refY="2" orient="auto">
+        <marker id={markerId} markerWidth="6" markerHeight="6" refX="4" refY="2" orient="auto">
           <polygon points="0 0, 4 2, 0 4" fill="rgba(125, 211, 252, 0.95)" />
         </marker>
       </defs>

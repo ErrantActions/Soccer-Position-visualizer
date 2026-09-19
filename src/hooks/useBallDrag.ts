@@ -64,6 +64,17 @@ export const useBallDrag = ({ fieldRef, ball, onBallChange }: UseBallDragArgs): 
     document.body.style.webkitUserSelect = '';
   }, []);
 
+  const flushPendingImmediately = useCallback(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (pendingPointRef.current) {
+      onBallChange(pendingPointRef.current);
+      pendingPointRef.current = null;
+    }
+  }, [onBallChange]);
+
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
@@ -96,9 +107,10 @@ export const useBallDrag = ({ fieldRef, ball, onBallChange }: UseBallDragArgs): 
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
       updateFromEvent(event);
+      flushPendingImmediately();
       stopDragging();
     },
-    [dragState.pointerId, stopDragging, updateFromEvent],
+    [dragState.pointerId, flushPendingImmediately, stopDragging, updateFromEvent],
   );
 
   const handlePointerCancel = useCallback(
@@ -143,10 +155,11 @@ export const useBallDrag = ({ fieldRef, ball, onBallChange }: UseBallDragArgs): 
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }
+      flushPendingImmediately();
       document.body.style.userSelect = '';
       document.body.style.webkitUserSelect = '';
     };
-  }, []);
+  }, [flushPendingImmediately]);
 
   return {
     dragState,

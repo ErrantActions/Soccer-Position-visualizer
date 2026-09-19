@@ -13,14 +13,18 @@ export const useFieldDimensions = (ref: RefObject<HTMLElement | null>): FieldDim
       return;
     }
 
-    const observer = new ResizeObserver(() => {
+    const measure = () => {
       const rect = element.getBoundingClientRect();
       setDimensions({
         width: rect.width,
         height: rect.height,
         dpr: window.devicePixelRatio || 1,
       });
-    });
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
 
     observer.observe(element);
     return () => observer.disconnect();
