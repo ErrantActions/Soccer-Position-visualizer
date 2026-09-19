@@ -67,7 +67,11 @@ export const loadProfile = (): PlayerProfile => {
 };
 
 export const saveProfile = (profile: PlayerProfile): void => {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {
+    // ignore storage failures so gameplay continues
+  }
 };
 
 export const loadProgress = (): ChallengeProgress => {
@@ -110,5 +114,9 @@ export const loadProgress = (): ChallengeProgress => {
 };
 
 export const saveProgress = (progress: ChallengeProgress): void => {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  } catch {
+    // ignore storage failures so gameplay continues
+  }
 };

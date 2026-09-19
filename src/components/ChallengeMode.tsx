@@ -54,12 +54,24 @@ const ChallengeMode = () => {
   const [profile, setProfile] = useState<PlayerProfile>(() => createDefaultProfile());
   const [progress, setProgress] = useState<ChallengeProgress>(() => createDefaultProgress());
   const [challengeIndex, setChallengeIndex] = useState(0);
-  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot(CHALLENGES[0].playerRole));
+  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot(CHALLENGES[0]?.playerRole ?? 'LB'));
   const [showWhy, setShowWhy] = useState(false);
   const [latestMessage, setLatestMessage] = useState<string>('Drag the highlighted player to the best spot, then tap Check Answer.');
   const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof scoreChallenge> | null>(null);
 
   const challenge = CHALLENGES[challengeIndex];
+
+  if (!challenge) {
+    return (
+      <div className="grid h-full place-items-center rounded-2xl border border-white/10 bg-slate-950/72 p-6 text-center text-slate-100">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Challenge Mode</p>
+          <h2 className="mt-2 text-xl font-bold">No challenges available yet</h2>
+          <p className="mt-2 text-sm text-slate-300">Add challenge scenarios to start practicing positioning.</p>
+        </div>
+      </div>
+    );
+  }
 
   const teammateSupport = useMemo(
     () => getRecommendedPosition({ ball: challenge.ballPosition, position: challenge.supportTeammate }).idealPosition,
@@ -242,14 +254,16 @@ const ChallengeMode = () => {
             <div className="h-7 w-7 rounded-full border border-slate-900/20 bg-white shadow-md" />
           </div>
 
-          <div
-            className={`pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 px-2 py-1 text-[11px] font-semibold shadow-lg ${
-              showWhy ? 'border-cyan-200 bg-cyan-500/85 text-slate-950' : 'border-white/30 bg-slate-900/70 text-slate-100'
-            }`}
-            style={{ left: expectedPct.left, top: expectedPct.top }}
-          >
-            Correct
-          </div>
+          {showWhy || scoreBreakdown ? (
+            <div
+              className={`pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 px-2 py-1 text-[11px] font-semibold shadow-lg ${
+                showWhy ? 'border-cyan-200 bg-cyan-500/85 text-slate-950' : 'border-white/30 bg-slate-900/70 text-slate-100'
+              }`}
+              style={{ left: expectedPct.left, top: expectedPct.top }}
+            >
+              Correct
+            </div>
+          ) : null}
 
           <div
             className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-indigo-500/75 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white"
