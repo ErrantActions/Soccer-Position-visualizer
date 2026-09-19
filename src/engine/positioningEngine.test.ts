@@ -108,8 +108,8 @@ describe('positioning engine', () => {
   });
 
   it('triggers pressure when the ball enters a defender engagement lane', () => {
-    const ball = { x: 0.2, y: 0.23 };
-    const result = getRecommendedPosition({ ball, position: 'LB' });
+    const ball = { x: 0.18, y: 0.32 };
+    const result = getRecommendedPosition({ ball, position: 'LCB' });
 
     expect(result.shouldPressBall).toBe(true);
     expect(result.coachingCue).toBe('Go win the ball');
