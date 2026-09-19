@@ -43,7 +43,7 @@ This repository can be deployed as a static site with GitHub Pages.
 2. In GitHub repository settings, set **Pages** to deploy from **GitHub Actions**.
 3. The workflow will build the Vite app and publish the `dist` output.
 
-The Vite config automatically uses the `/Soccer-Position-visualizer/` base path during GitHub Actions builds so assets resolve correctly on GitHub Pages.
+The Vite config automatically uses the repository name from the GitHub Actions environment as the Pages base path so assets resolve correctly even if the repository name changes.
 
 ## Preview a production build locally
 
