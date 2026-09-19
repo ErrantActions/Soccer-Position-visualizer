@@ -5,7 +5,6 @@ import { scoreChallenge } from '../challenge/scoring';
 import { BADGES, loadProfile, loadProgress, saveProfile, saveProgress } from '../challenge/storage';
 import type { BadgeId, ChallengeProgress, PlayerProfile } from '../challenge/types';
 import { POSITION_PROFILES } from '../engine/positionProfiles';
-import { getRecommendedPosition } from '../engine/positioningEngine';
 import type { NormalizedPoint, PlayerPosition } from '../types/soccer';
 import { clamp01 } from '../utils/clamp';
 import { toNormalizedPoint, toPercent } from '../utils/coordinates';
@@ -73,10 +72,7 @@ const ChallengeMode = () => {
     );
   }
 
-  const teammateSupport = useMemo(
-    () => getRecommendedPosition({ ball: challenge.ballPosition, position: challenge.supportTeammate }).idealPosition,
-    [challenge.ballPosition, challenge.supportTeammate],
-  );
+  const teammateSupport = challenge.supportPosition;
 
   useEffect(() => {
     saveProfile(profile);

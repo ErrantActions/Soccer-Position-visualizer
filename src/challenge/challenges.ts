@@ -19,6 +19,7 @@ const createChallenge = (
   expectedPosition: getRecommendedPosition({ ball: ballPosition, position: playerRole }).idealPosition,
   explanation,
   supportTeammate,
+  supportPosition: getRecommendedPosition({ ball: ballPosition, position: supportTeammate }).idealPosition,
 });
 
 export const CHALLENGES: Challenge[] = [

@@ -20,6 +20,7 @@ export type Challenge = {
   expectedPosition: NormalizedPoint;
   explanation: string;
   supportTeammate: PlayerPosition;
+  supportPosition: NormalizedPoint;
 };
 
 export type ChallengeScoreBand = 'excellent' | 'great' | 'close' | 'try-again';

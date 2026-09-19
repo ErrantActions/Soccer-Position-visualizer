@@ -12,6 +12,14 @@ describe('challenge seed data', () => {
 
       expect(challenge.expectedPosition.x).toBeCloseTo(expected.x, 6);
       expect(challenge.expectedPosition.y).toBeCloseTo(expected.y, 6);
+
+      const supportExpected = getRecommendedPosition({
+        ball: challenge.ballPosition,
+        position: challenge.supportTeammate,
+      }).idealPosition;
+
+      expect(challenge.supportPosition.x).toBeCloseTo(supportExpected.x, 6);
+      expect(challenge.supportPosition.y).toBeCloseTo(supportExpected.y, 6);
     }
   });
 });

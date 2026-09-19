@@ -38,16 +38,28 @@ const App = () => {
   }, []);
 
   const requestLandscape = async () => {
-    try {
-      if (document.fullscreenElement === null && document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      }
+    if (!('orientation' in screen) || !('lock' in screen.orientation)) {
+      return;
+    }
 
-      if ('orientation' in screen && 'lock' in screen.orientation) {
-        await screen.orientation.lock('landscape');
-      }
+    try {
+      await screen.orientation.lock('landscape');
+      return;
     } catch {
-      // no-op: browser may block orientation lock outside supported contexts
+      // continue to fullscreen fallback
+    }
+
+    if (!document.documentElement.requestFullscreen || document.fullscreenElement !== null) {
+      return;
+    }
+
+    try {
+      await document.documentElement.requestFullscreen();
+      await screen.orientation.lock('landscape');
+    } catch {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
     }
   };
 
