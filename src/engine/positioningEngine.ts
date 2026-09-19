@@ -46,17 +46,17 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
   const ballInsideBoundary = isPointInPolygon(ball, boundary.points);
   const ballDistance = distance(idealPosition, ball);
-  const pressureWindow = position === 'CDM' ? 1.15 : 0.95;
+  const pressureWindow = position === 'CDM' ? 1.25 : 1.2;
   const isPressDistance = ballDistance <= profile.acceptableRadius * pressureWindow;
   const ballIsInFront = ball.x >= idealPosition.x - 0.015;
   const shouldPressBall = ballInsideBoundary && ballIsInFront && isPressDistance;
   const coachingCue = shouldPressBall
     ? 'Go win the ball'
-    : isOutsideNormalBoundary
-      ? 'Recover inside your boundary'
-      : ballInsideBoundary
-        ? 'Close space and stay goal side'
-        : 'Hold shape and protect the middle';
+    : ballInsideBoundary
+      ? isOutsideNormalBoundary
+        ? 'Recover inside your boundary'
+        : 'Close space and stay goal side'
+      : 'Hold shape and protect the middle';
 
   return {
     idealPosition,
