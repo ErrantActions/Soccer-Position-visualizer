@@ -31,6 +31,25 @@ const ROLE_LATERAL_RATIO: Record<PlayerPosition, number> = {
   CDM: 0.52,
 };
 
+type PressTuning = {
+  baseWindow: number;
+  xPadding: number;
+  yPadding: number;
+  forwardAllowance: number;
+};
+
+const PRESS_TUNING: Record<PlayerPosition, PressTuning> = {
+  LB: { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 },
+  LCB: { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 },
+  RCB: { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 },
+  RB: { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 },
+  CDM: { baseWindow: 1.55, xPadding: 0.06, yPadding: 0.05, forwardAllowance: 0.1 },
+};
+
+const DEFAULT_PRESS_TUNING: PressTuning = { baseWindow: 1.7, xPadding: 0.08, yPadding: 0.07, forwardAllowance: 0.1 };
+const PRESSURE_DANGER_WINDOW_BASE = 1.2;
+const PRESSURE_DANGER_WINDOW_BOOST = 1.4;
+
 export const calculateGoalSidePosition = ({ ball, goal, formation, role, profile }: GoalSideInput): NormalizedPoint => {
   const depthRatio = ROLE_DEPTH_RATIO[role] + (formation === '4-4-2' ? 0 : 0);
   const lateralRatio = ROLE_LATERAL_RATIO[role];
@@ -101,10 +120,19 @@ export const getRecommendedPosition = ({ ball, position }: PositioningInput): Po
   const isOutsideNormalBoundary = !isPointInPolygon(idealPosition, boundary.points);
   const ballInsideBoundary = isPointInPolygon(ball, boundary.points);
   const ballDistance = distance(idealPosition, ball);
-  const pressureWindow = position === 'CDM' ? 1.25 : 1.2;
-  const isPressDistance = ballDistance <= profile.acceptableRadius * pressureWindow;
+  const pressTuning = PRESS_TUNING[position] ?? DEFAULT_PRESS_TUNING;
+  const pressureWindow = pressTuning.baseWindow;
+  const dangerPressureWindow = PRESSURE_DANGER_WINDOW_BASE + dangerBoost * PRESSURE_DANGER_WINDOW_BOOST;
+  const pressureDistanceLimit = profile.acceptableRadius * Math.max(pressureWindow, dangerPressureWindow);
+  const isPressDistance = ballDistance <= pressureDistanceLimit;
+  const ballInEngagementChannel =
+    ball.x >= profile.minX - pressTuning.xPadding &&
+    ball.x <= profile.maxX + pressTuning.forwardAllowance &&
+    ball.y >= profile.minY - pressTuning.yPadding &&
+    ball.y <= profile.maxY + pressTuning.yPadding;
   const ballIsInFront = ball.x >= idealPosition.x - 0.015;
-  const shouldPressBall = ballInsideBoundary && ballIsInFront && isPressDistance;
+  const shouldPressBall =
+    ballInsideBoundary && !isOutsideNormalBoundary && ballInEngagementChannel && ballIsInFront && isPressDistance;
   const coachingCue = shouldPressBall
     ? 'Go win the ball'
     : ballInsideBoundary
