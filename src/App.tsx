@@ -20,6 +20,7 @@ function App() {
   const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const backgroundContentRef = useRef<HTMLDivElement>(null);
   const menuPanelRef = useRef<HTMLElement>(null);
   const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
@@ -40,6 +41,10 @@ function App() {
     shouldRestoreFocusRef.current = restoreFocus;
     setIsMenuOpen(false);
   };
+
+  useEffect(() => {
+    backgroundContentRef.current?.toggleAttribute('inert', isMenuOpen);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -97,7 +102,7 @@ function App() {
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
-      <div aria-hidden={isMenuOpen}>
+      <div ref={backgroundContentRef} aria-hidden={isMenuOpen}>
       <SoccerField
         ball={ball}
         onBallChange={setBall}
