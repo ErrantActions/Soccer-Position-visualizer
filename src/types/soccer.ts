@@ -43,8 +43,12 @@ export type DragState = {
 };
 
 export type DisplaySettings = {
-  showHeatmap: boolean;
-  showBoundaries: boolean;
-  showGuides: boolean;
-  showBallLine: boolean;
+  showDangerMap: boolean;
+  showGoalSideIndicators: boolean;
+  showDefensiveCones: boolean;
+  showPassingLanes: boolean;
+  showSupportTriangles: boolean;
+  showCompactnessBands: boolean;
+  showPressureAssignments: boolean;
+  showWeakSideShading: boolean;
 };

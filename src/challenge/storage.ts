@@ -1,34 +1,14 @@
 import type { Badge, BadgeId, ChallengeProgress, PlayerProfile } from './types';
-import type { PlayerPosition } from '../types/soccer';
+import type { TacticalRole } from '../engine/tactical';
 
-const PROFILE_KEY = 'soccer-positioning.profile.v1';
-const PROGRESS_KEY = 'soccer-positioning.progress.v1';
+const PROFILE_KEY = 'soccer-positioning.profile.v2';
+const PROGRESS_KEY = 'soccer-positioning.progress.v2';
 
 export const BADGES: Badge[] = [
-  {
-    id: 'first-challenge-complete',
-    icon: '🏆',
-    label: 'First Challenge Complete',
-    description: 'Complete your first challenge.',
-  },
-  {
-    id: 'defensive-wall',
-    icon: '🏆',
-    label: 'Defensive Wall',
-    description: 'Score at least 80 points in 3 different challenges.',
-  },
-  {
-    id: 'goal-side-master',
-    icon: '🏆',
-    label: 'Goal Side Master',
-    description: 'Get 100 points while staying goal side in 3 challenges.',
-  },
-  {
-    id: 'positioning-pro',
-    icon: '🏆',
-    label: 'Positioning Pro',
-    description: 'Reach a total score of 400 points.',
-  },
+  { id: 'first-challenge-complete', icon: '🏆', label: 'First Challenge Complete', description: 'Complete your first challenge.' },
+  { id: 'defensive-wall', icon: '🛡️', label: 'Defensive Wall', description: 'Score at least 80 points in 3 different challenges.' },
+  { id: 'goal-side-master', icon: '⚽', label: 'Goal Side Master', description: 'Score 85+ goal-side points in 3 challenges.' },
+  { id: 'positioning-pro', icon: '🧠', label: 'Positioning Pro', description: 'Reach a total score of 400 points.' },
 ];
 
 export const createDefaultProfile = (): PlayerProfile => ({
@@ -45,27 +25,22 @@ export const createDefaultProgress = (): ChallengeProgress => ({
   badges: [],
 });
 
-const isPlayerPosition = (value: unknown): value is PlayerPosition =>
-  value === 'LB' || value === 'LCB' || value === 'RCB' || value === 'RB' || value === 'CDM';
+const isTacticalRole = (value: unknown): value is TacticalRole =>
+  value === 'GK' || value === 'LB' || value === 'LCB' || value === 'RCB' || value === 'RB' || value === 'CDM' || value === 'LCM' || value === 'RCM' || value === 'LM' || value === 'RM' || value === 'ST';
 
 export const loadProfile = (): PlayerProfile => {
   let raw: string | null = null;
-
   try {
     raw = localStorage.getItem(PROFILE_KEY);
   } catch {
     return createDefaultProfile();
   }
-
-  if (!raw) {
-    return createDefaultProfile();
-  }
-
+  if (!raw) return createDefaultProfile();
   try {
     const parsed = JSON.parse(raw) as Partial<PlayerProfile>;
     return {
       name: typeof parsed.name === 'string' ? parsed.name : '',
-      favoritePosition: isPlayerPosition(parsed.favoritePosition) ? parsed.favoritePosition : 'LB',
+      favoritePosition: isTacticalRole(parsed.favoritePosition) ? parsed.favoritePosition : 'LB',
       age: typeof parsed.age === 'number' || parsed.age === '' ? parsed.age : '',
     };
   } catch {
@@ -83,24 +58,17 @@ export const saveProfile = (profile: PlayerProfile): void => {
 
 export const loadProgress = (): ChallengeProgress => {
   let raw: string | null = null;
-
   try {
     raw = localStorage.getItem(PROGRESS_KEY);
   } catch {
     return createDefaultProgress();
   }
-
-  if (!raw) {
-    return createDefaultProgress();
-  }
-
+  if (!raw) return createDefaultProgress();
   try {
     const parsed = JSON.parse(raw) as Partial<ChallengeProgress>;
     return {
       totalScore: typeof parsed.totalScore === 'number' ? parsed.totalScore : 0,
-      completedChallengeIds: Array.isArray(parsed.completedChallengeIds)
-        ? parsed.completedChallengeIds.filter((id): id is string => typeof id === 'string')
-        : [],
+      completedChallengeIds: Array.isArray(parsed.completedChallengeIds) ? parsed.completedChallengeIds.filter((id): id is string => typeof id === 'string') : [],
       bestScores:
         parsed.bestScores && typeof parsed.bestScores === 'object'
           ? (Object.fromEntries(

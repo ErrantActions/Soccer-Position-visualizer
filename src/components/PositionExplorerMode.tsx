@@ -1,202 +1,200 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { DisplaySettings, NormalizedPoint, PlayerPosition } from '../types/soccer';
-import { getRecommendedPosition } from '../engine/positioningEngine';
+import { useEffect, useMemo, useState } from 'react';
 import DisplayControls from './DisplayControls';
-import HeatmapLegend from './HeatmapLegend';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
+import type { DisplaySettings, NormalizedPoint } from '../types/soccer';
+import {
+  ROLE_LABELS,
+  ROLE_ORDER,
+  TacticalState,
+  buildTeamTacticalModel,
+  createDefaultPlayers,
+  getBallCarrierTeam,
+  type ActivePlayer,
+  type LearningMode,
+  type TacticalRole,
+} from '../engine/tactical';
 
 const createCenterBall = (): NormalizedPoint => ({ x: 0.5, y: 0.5 });
 
 const defaultSettings: DisplaySettings = {
-  showHeatmap: true,
-  showBoundaries: true,
-  showGuides: true,
-  showBallLine: true,
+  showDangerMap: true,
+  showGoalSideIndicators: true,
+  showDefensiveCones: true,
+  showPassingLanes: true,
+  showSupportTriangles: true,
+  showCompactnessBands: true,
+  showPressureAssignments: true,
+  showWeakSideShading: true,
 };
 
+const stateOptions = Object.values(TacticalState);
+const learningModes: LearningMode[] = ['child', 'standard', 'advanced'];
+
 const PositionExplorerMode = () => {
-  const [selectedPosition, setSelectedPosition] = useState<PlayerPosition>('LB');
   const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const backgroundContentRef = useRef<HTMLDivElement>(null);
-  const menuPanelRef = useRef<HTMLElement>(null);
-  const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
-  const shouldRestoreFocusRef = useRef(true);
+  const [tacticalState, setTacticalState] = useState<TacticalState>(TacticalState.Defending);
+  const [learningMode, setLearningMode] = useState<LearningMode>('standard');
+  const [players, setPlayers] = useState<ActivePlayer[]>(() => createDefaultPlayers());
+  const [selectedRole, setSelectedRole] = useState<TacticalRole>('LB');
 
-  const positioning = useMemo(
-    () => getRecommendedPosition({ ball, position: selectedPosition }),
-    [ball, selectedPosition],
+  const activeRoles = useMemo(
+    () => players.filter((player) => player.active).map((player) => player.role),
+    [players],
   );
 
-  const openMenu = () => {
-    lastFocusedElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    shouldRestoreFocusRef.current = true;
-    setIsMenuOpen(true);
-  };
-
-  const closeMenu = (restoreFocus = true) => {
-    shouldRestoreFocusRef.current = restoreFocus;
-    setIsMenuOpen(false);
-  };
-
   useEffect(() => {
-    backgroundContentRef.current?.toggleAttribute('inert', isMenuOpen);
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      const restoreTarget = lastFocusedElementRef.current;
-
-      if (shouldRestoreFocusRef.current) {
-        requestAnimationFrame(() => restoreTarget?.focus());
-      }
-
-      lastFocusedElementRef.current = null;
-      shouldRestoreFocusRef.current = true;
-      return;
+    if (!activeRoles.includes(selectedRole) && activeRoles[0]) {
+      setSelectedRole(activeRoles[0]);
     }
+  }, [activeRoles, selectedRole]);
 
-    closeMenuButtonRef.current?.focus();
+  const safeSelectedRole = activeRoles.includes(selectedRole) ? selectedRole : activeRoles[0] ?? 'GK';
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeMenu();
-        return;
-      }
+  const model = useMemo(
+    () =>
+      buildTeamTacticalModel(
+        {
+          ball,
+          tacticalState,
+          learningMode,
+          ballCarrierTeam: getBallCarrierTeam(tacticalState),
+          selectedRole: safeSelectedRole,
+        },
+        {
+          formationLabel: 'Custom team shape',
+          orientation: 'leftToRight',
+          stylePreset: 'balanced',
+          activePlayers: players,
+        },
+      ),
+    [ball, learningMode, players, safeSelectedRole, tacticalState],
+  );
 
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const focusableElements = menuPanelRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-
-      if (!focusableElements?.length) {
-        event.preventDefault();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMenuOpen]);
+  const selectedPlayer = model.players.find((player) => player.player.role === safeSelectedRole) ?? model.players[0];
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
-      <div ref={backgroundContentRef} aria-hidden={isMenuOpen} className="h-full">
-        <SoccerField
-          ball={ball}
-          onBallChange={setBall}
-          selectedPosition={selectedPosition}
-          positioning={positioning}
-          settings={settings}
-        />
+    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.9fr)]">
+      <section className="min-h-[48dvh] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
+        <SoccerField ball={ball} onBallChange={setBall} model={model} selectedRole={safeSelectedRole} settings={settings} />
+      </section>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end p-3 sm:p-4">
-          <button
-            type="button"
-            onClick={openMenu}
-            aria-expanded={isMenuOpen}
-            aria-controls="field-settings-menu"
-            className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-slate-950/82 px-4 py-2 text-sm font-semibold text-slate-50 shadow-lg backdrop-blur-md transition hover:bg-slate-900/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-          >
-            <span aria-hidden="true">☰</span>
-            Menu
-          </button>
-        </div>
+      <aside className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/72 p-4 text-slate-100 shadow-2xl backdrop-blur-md">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Position Explorer</p>
+        <h2 className="mt-1 text-xl font-bold">Team state + learner role</h2>
+        <p className="mt-1 text-sm text-slate-300">Move the ball, change the tactical state, and see how every active player adjusts together.</p>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 sm:p-4">
-          <div className="mx-auto flex max-w-5xl flex-col gap-3">
-            {positioning.isOutsideNormalBoundary ? (
-              <p className="pointer-events-auto rounded-xl border border-amber-300/60 bg-amber-400/15 px-4 py-3 text-sm text-amber-100 shadow-lg backdrop-blur-md">
-                Covering outside the usual {selectedPosition} area.
-              </p>
-            ) : null}
-            <div
-              className={`pointer-events-auto rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md ring-1 ${
-                positioning.shouldPressBall
-                  ? 'border-rose-300/60 bg-rose-500/15 text-rose-50 ring-rose-200/20'
-                  : 'border-slate-700 bg-slate-900/85 text-slate-100 ring-white/10'
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em]">
-                  {positioning.shouldPressBall ? 'Pressure cue' : 'Shape cue'}
-                </p>
-                <p className={`text-sm ${positioning.shouldPressBall ? 'text-rose-100' : 'text-slate-300'}`}>
-                  Confidence {Math.round(positioning.confidence)}%
-                </p>
-              </div>
-              <p className="mt-2 text-base font-semibold">{positioning.coachingCue}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {isMenuOpen ? (
-        <div className="absolute inset-0 z-40" onClick={() => closeMenu()}>
-          <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" />
-          <aside
-            id="field-settings-menu"
-            ref={menuPanelRef}
-            className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto border-l border-white/10 bg-slate-950/96 p-4 text-slate-100 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="field-settings-title"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Menu</p>
-                <h1 id="field-settings-title" className="mt-1 text-2xl font-bold">
-                  Field settings
-                </h1>
-                <p className="mt-1 text-sm text-slate-300">Change the defender, overlays, and ball state without leaving the field.</p>
-                <div className="mt-3 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Position Explorer</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-100">{selectedPosition} defensive view</p>
-                  <p className="text-xs text-slate-300">Drag the ball freely and keep your shape goal side.</p>
+        <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
+          <p className="text-sm font-semibold">Selected learner</p>
+          {selectedPlayer ? (
+            <>
+              <p className="mt-1 text-sm text-slate-300">{ROLE_LABELS[selectedPlayer.player.role]}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                  <p className="text-slate-400">Goal side</p>
+                  <p className="font-semibold text-emerald-300">{selectedPlayer.goalSideScore}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                  <p className="text-slate-400">Shape</p>
+                  <p className="font-semibold text-cyan-300">{selectedPlayer.shapeScore}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                  <p className="text-slate-400">Support</p>
+                  <p className="font-semibold text-violet-300">{selectedPlayer.supportScore}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                  <p className="text-slate-400">Positioning</p>
+                  <p className="font-semibold text-amber-300">{selectedPlayer.positioningScore}</p>
                 </div>
               </div>
-              <button
-                ref={closeMenuButtonRef}
-                type="button"
-                onClick={() => closeMenu()}
-                className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-              >
-                Close
-              </button>
-            </div>
-
-            <PositionSelector value={selectedPosition} onChange={setSelectedPosition} />
-            <DisplayControls
-              settings={settings}
-              onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
-              onResetBall={() => setBall(createCenterBall())}
-            />
-            <HeatmapLegend />
-          </aside>
+              <p className="mt-3 text-sm font-semibold text-slate-100">{selectedPlayer.explanation.primary}</p>
+              <p className="mt-1 text-sm text-slate-300">{learningMode === 'child' ? selectedPlayer.explanation.childFriendly : selectedPlayer.explanation.secondary}</p>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-slate-300">Activate at least one role to see guidance.</p>
+          )}
         </div>
-      ) : null}
+
+        <div className="mt-4 grid gap-3">
+          <PositionSelector value={safeSelectedRole} options={activeRoles} onChange={setSelectedRole} />
+
+          <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Tactical state</p>
+            <select
+              value={tacticalState}
+              onChange={(event) => setTacticalState(event.target.value as TacticalState)}
+              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-3 text-sm"
+            >
+              {stateOptions.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Learning mode</p>
+            <select
+              value={learningMode}
+              onChange={(event) => setLearningMode(event.target.value as LearningMode)}
+              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-3 text-sm"
+            >
+              {learningModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
+                </option>
+              ))}
+            </select>
+          </section>
+
+          <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Active positions</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ROLE_ORDER.map((role) => {
+                const active = players.find((player) => player.role === role)?.active ?? false;
+                return (
+                  <label key={role} className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() =>
+                        setPlayers((current) =>
+                          current.map((player) => (player.role === role ? { ...player, active: !player.active } : player)),
+                        )
+                      }
+                    />
+                    <span>
+                      <span className="block font-semibold">{role}</span>
+                      <span className="block text-xs text-slate-400">{ROLE_LABELS[role]}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
+          <DisplayControls
+            settings={settings}
+            onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
+            onResetBall={() => setBall(createCenterBall())}
+          />
+
+          <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Why each player is there</p>
+            <div className="grid gap-2">
+              {model.players.map((player) => (
+                <div key={player.player.id} className={`rounded-lg border px-3 py-2 ${player.player.role === safeSelectedRole ? 'border-cyan-300/50 bg-cyan-500/10' : 'border-white/10 bg-slate-950/60'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">{player.player.role} · {ROLE_LABELS[player.player.role]}</p>
+                    <span className="rounded-full bg-slate-800 px-2 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-300">{player.responsibility}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-200">{player.explanation.primary}</p>
+                  <p className="text-xs text-slate-400">{learningMode === 'child' ? player.explanation.childFriendly : player.explanation.secondary}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </aside>
     </div>
   );
 };

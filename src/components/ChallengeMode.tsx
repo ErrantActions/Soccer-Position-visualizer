@@ -1,78 +1,65 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEventHandler, PointerEventHandler } from 'react';
-import { CHALLENGES } from '../challenge/challenges';
-import { scoreChallenge } from '../challenge/scoring';
+import { useEffect, useMemo, useState } from 'react';
+import DisplayControls from './DisplayControls';
+import PositionSelector from './PositionSelector';
+import SoccerField from './SoccerField';
 import { BADGES, loadProfile, loadProgress, saveProfile, saveProgress } from '../challenge/storage';
 import type { BadgeId, ChallengeProgress, PlayerProfile } from '../challenge/types';
-import { POSITION_PROFILES } from '../engine/positionProfiles';
-import type { NormalizedPoint, PlayerPosition } from '../types/soccer';
-import { clamp01 } from '../utils/clamp';
-import { toNormalizedPoint, toPercent } from '../utils/coordinates';
+import type { DisplaySettings, NormalizedPoint } from '../types/soccer';
+import {
+  ROLE_LABELS,
+  ROLE_ORDER,
+  TacticalState,
+  buildTeamTacticalModel,
+  createDefaultPlayers,
+  createChallengeScenario,
+  evaluateChallengePlacement,
+  findPlayerResult,
+  getBallCarrierTeam,
+  type ActivePlayer,
+  type LearningMode,
+  type TacticalRole,
+} from '../engine/tactical';
 
-const MODE_LABELS: Record<PlayerPosition, string> = {
-  LB: 'Left Defender',
-  LCB: 'Left Center Back',
-  RCB: 'Right Center Back',
-  RB: 'Right Defender',
-  CDM: 'Defensive Midfielder',
+const defaultSettings: DisplaySettings = {
+  showDangerMap: true,
+  showGoalSideIndicators: true,
+  showDefensiveCones: true,
+  showPassingLanes: true,
+  showSupportTriangles: false,
+  showCompactnessBands: true,
+  showPressureAssignments: true,
+  showWeakSideShading: true,
 };
 
-const getStartingSpot = (position: PlayerPosition): NormalizedPoint => ({
-  x: POSITION_PROFILES[position].baseX,
-  y: POSITION_PROFILES[position].baseY,
-});
+const challengeStates: TacticalState[] = [TacticalState.Defending, TacticalState.TransitionToDefense, TacticalState.Attacking, TacticalState.GoalKick];
+const learningModes: LearningMode[] = ['child', 'standard', 'advanced'];
+
+const getStartingSpot = (role: TacticalRole, players: ActivePlayer[]) => {
+  const match = players.find((player) => player.role === role);
+  return match ? { x: match.role === 'GK' ? 0.08 : match.side === 'left' ? 0.24 : match.side === 'right' ? 0.76 : 0.5, y: match.side === 'left' ? 0.22 : match.side === 'right' ? 0.78 : 0.5 } : { x: 0.5, y: 0.5 };
+};
 
 const updateBadges = (progress: ChallengeProgress): BadgeId[] => {
   const badges = new Set(progress.badges);
-
-  if (progress.completedChallengeIds.length >= 1) {
-    badges.add('first-challenge-complete');
-  }
-
-  const strongScores = Object.values(progress.bestScores).filter((score) => score >= 80).length;
-  if (strongScores >= 3) {
-    badges.add('defensive-wall');
-  }
-
-  if (progress.goalSidePerfectChallengeIds.length >= 3) {
-    badges.add('goal-side-master');
-  }
-
-  if (progress.totalScore >= 400) {
-    badges.add('positioning-pro');
-  }
-
+  if (progress.completedChallengeIds.length >= 1) badges.add('first-challenge-complete');
+  if (Object.values(progress.bestScores).filter((score) => score >= 80).length >= 3) badges.add('defensive-wall');
+  if (progress.goalSidePerfectChallengeIds.length >= 3) badges.add('goal-side-master');
+  if (progress.totalScore >= 400) badges.add('positioning-pro');
   return [...badges];
 };
 
 const ChallengeMode = () => {
-  const fieldRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<HTMLButtonElement>(null);
-  const pointerIdRef = useRef<number | null>(null);
-
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile());
   const [progress, setProgress] = useState<ChallengeProgress>(() => loadProgress());
-  const [challengeIndex, setChallengeIndex] = useState(0);
-  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot('LB'));
+  const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
+  const [players, setPlayers] = useState<ActivePlayer[]>(() => createDefaultPlayers());
+  const [tacticalState, setTacticalState] = useState<TacticalState>(TacticalState.Defending);
+  const [learningMode, setLearningMode] = useState<LearningMode>('standard');
+  const [selectedRole, setSelectedRole] = useState<TacticalRole>(() => loadProfile().favoritePosition);
   const [showWhy, setShowWhy] = useState(false);
-  const [latestMessage, setLatestMessage] = useState<string>('Drag the highlighted player to the best spot, then tap Check Answer.');
-  const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof scoreChallenge> | null>(null);
-
-  const challenge = CHALLENGES[challengeIndex];
-
-  if (!challenge) {
-    return (
-      <div className="grid h-full place-items-center rounded-2xl border border-white/10 bg-slate-950/72 p-6 text-center text-slate-100">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Challenge Mode</p>
-          <h2 className="mt-2 text-xl font-bold">No challenges available yet</h2>
-          <p className="mt-2 text-sm text-slate-300">Add challenge scenarios to start practicing positioning.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const teammateSupport = challenge.supportPosition;
+  const [latestMessage, setLatestMessage] = useState('Place yourself, then check your tactical position.');
+  const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof evaluateChallengePlacement> | null>(null);
+  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(() => getStartingSpot(loadProfile().favoritePosition, createDefaultPlayers()));
 
   useEffect(() => {
     saveProfile(profile);
@@ -82,368 +69,299 @@ const ChallengeMode = () => {
     saveProgress(progress);
   }, [progress]);
 
+  const activeRoles = useMemo(
+    () => players.filter((player) => player.active).map((player) => player.role),
+    [players],
+  );
+
   useEffect(() => {
-    setPlayerPosition(getStartingSpot(challenge.playerRole));
-    setShowWhy(false);
-    setScoreBreakdown(null);
-    setLatestMessage('Find your best defensive spot!');
-  }, [challenge.id, challenge.playerRole]);
+    if (!activeRoles.includes(selectedRole) && activeRoles[0]) {
+      setSelectedRole(activeRoles[0]);
+    }
+  }, [activeRoles, selectedRole]);
 
-  const playerName = profile.name.trim();
+  const safeSelectedRole = activeRoles.includes(selectedRole) ? selectedRole : activeRoles[0] ?? 'GK';
 
-  const roleChecks = useMemo(() => {
-    const goalSide = playerPosition.x <= challenge.ballPosition.x - 0.015;
-    const centerProtection = Math.abs(playerPosition.y - 0.5) <= Math.abs(challenge.ballPosition.y - 0.5) + 0.1;
-    const teammateCover = Math.hypot(playerPosition.x - teammateSupport.x, playerPosition.y - teammateSupport.y) <= 0.22;
-    const ballSideSupport = Math.abs(playerPosition.y - challenge.ballPosition.y) <= 0.24;
-    const shape = Math.hypot(playerPosition.x - challenge.expectedPosition.x, playerPosition.y - challenge.expectedPosition.y) <= 0.2;
-
+  const ball = useMemo<NormalizedPoint>(() => {
+    const seed = challengeStates.indexOf(tacticalState);
+    const verticalSeed = safeSelectedRole.length * 0.03;
     return {
-      goalSide,
-      centerProtection,
-      teammateCover,
-      ballSideSupport,
-      shape,
+      x: tacticalState === TacticalState.GoalKick ? 0.12 : tacticalState === TacticalState.Attacking ? 0.68 : tacticalState === TacticalState.TransitionToDefense ? 0.58 : 0.42,
+      y: Math.min(0.84, Math.max(0.16, 0.28 + seed * 0.14 + verticalSeed)),
     };
-  }, [challenge.ballPosition, challenge.expectedPosition, playerPosition, teammateSupport]);
+  }, [safeSelectedRole, tacticalState]);
+
+  const model = useMemo(
+    () =>
+      buildTeamTacticalModel(
+        {
+          ball,
+          tacticalState,
+          learningMode,
+          ballCarrierTeam: getBallCarrierTeam(tacticalState),
+          selectedRole: safeSelectedRole,
+        },
+        {
+          formationLabel: 'Challenge setup',
+          orientation: 'leftToRight',
+          stylePreset: 'balanced',
+          activePlayers: players,
+        },
+      ),
+    [ball, learningMode, players, safeSelectedRole, tacticalState],
+  );
+
+  const scenario = useMemo(() => createChallengeScenario(model, safeSelectedRole), [model, safeSelectedRole]);
+  const expectedPlayer = useMemo(() => findPlayerResult(model, safeSelectedRole), [model, safeSelectedRole]);
+
+  useEffect(() => {
+    setPlayerPosition(expectedPlayer.formationAnchor);
+    setScoreBreakdown(null);
+    setShowWhy(false);
+    setLatestMessage('Find the best team-connected spot before you reveal the answer.');
+  }, [scenario.id]);
 
   const checkAnswer = () => {
-    const result = scoreChallenge(playerPosition, challenge.expectedPosition);
+    const result = evaluateChallengePlacement(playerPosition, expectedPlayer);
     setScoreBreakdown(result);
-
-    const prefix = playerName ? `${playerName}, ` : '';
-    const goalSideMessage = roleChecks.goalSide ? 'You stayed goal side.' : 'Try staying goal side next time.';
-    setLatestMessage(`${prefix}${result.message} ${goalSideMessage}`);
+    const prefix = profile.name.trim() ? `${profile.name.trim()}, ` : '';
+    setLatestMessage(`${prefix}${result.feedback}`);
 
     setProgress((current) => {
-      const completedChallengeIds = current.completedChallengeIds.includes(challenge.id)
+      const completedChallengeIds = current.completedChallengeIds.includes(scenario.id)
         ? current.completedChallengeIds
-        : [...current.completedChallengeIds, challenge.id];
-
-      const previousBest = current.bestScores[challenge.id] ?? 0;
-      const bestScoreForChallenge = Math.max(previousBest, result.points);
-      const bestScores = { ...current.bestScores, [challenge.id]: bestScoreForChallenge };
+        : [...current.completedChallengeIds, scenario.id];
+      const previousBest = current.bestScores[scenario.id] ?? 0;
+      const bestScoreForChallenge = Math.max(previousBest, result.positioningScore);
       const scoreImprovement = Math.max(0, bestScoreForChallenge - previousBest);
-
       const goalSidePerfectChallengeIds =
-        result.points === 100 && roleChecks.goalSide && !current.goalSidePerfectChallengeIds.includes(challenge.id)
-          ? [...current.goalSidePerfectChallengeIds, challenge.id]
+        result.goalSideScore >= 85 && !current.goalSidePerfectChallengeIds.includes(scenario.id)
+          ? [...current.goalSidePerfectChallengeIds, scenario.id]
           : current.goalSidePerfectChallengeIds;
 
       const nextProgress: ChallengeProgress = {
         ...current,
         completedChallengeIds,
-        bestScores,
+        bestScores: { ...current.bestScores, [scenario.id]: bestScoreForChallenge },
         goalSidePerfectChallengeIds,
         totalScore: current.totalScore + scoreImprovement,
         badges: current.badges,
       };
-
       nextProgress.badges = updateBadges(nextProgress);
       return nextProgress;
     });
   };
 
-  const nextChallenge = () => {
-    if (CHALLENGES.length === 0) {
-      return;
-    }
-
-    setChallengeIndex((current) => (current + 1) % CHALLENGES.length);
-  };
-
-  const updateFromPointer = (clientX: number, clientY: number) => {
-    const rect = fieldRef.current?.getBoundingClientRect();
-    if (!rect) {
-      return;
-    }
-
-    const point = toNormalizedPoint(clientX, clientY, rect);
-    setPlayerPosition({ x: clamp01(point.x), y: clamp01(point.y) });
-  };
-
-  const nudgePlayer = (dx: number, dy: number) => {
-    setPlayerPosition((current) => ({
-      x: clamp01(current.x + dx),
-      y: clamp01(current.y + dy),
-    }));
-  };
-
-  const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
-    const step = event.shiftKey ? 0.04 : 0.02;
-
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      nudgePlayer(-step, 0);
-      return;
-    }
-
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      nudgePlayer(step, 0);
-      return;
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      nudgePlayer(0, -step);
-      return;
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      nudgePlayer(0, step);
-    }
-  };
-
-  const handlePointerDown: PointerEventHandler<HTMLButtonElement> = (event) => {
-    pointerIdRef.current = event.pointerId;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    updateFromPointer(event.clientX, event.clientY);
-  };
-
-  const handlePointerMove: PointerEventHandler<HTMLButtonElement> = (event) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    updateFromPointer(event.clientX, event.clientY);
-  };
-
-  const handlePointerRelease: PointerEventHandler<HTMLButtonElement> = (event) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    pointerIdRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  };
-
-  const ballPct = toPercent(challenge.ballPosition);
-  const expectedPct = toPercent(challenge.expectedPosition);
-  const playerPct = toPercent(playerPosition);
-  const teammatePct = toPercent(teammateSupport);
-
   return (
-    <div className="grid h-full min-h-0 gap-3 md:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.9fr)]">
-      <section className="relative min-h-[48dvh] overflow-hidden rounded-2xl border border-white/10 bg-[#0c4a2d] shadow-2xl">
-        <div ref={fieldRef} className="relative h-full w-full touch-none select-none">
-          <svg viewBox="0 0 120 80" className="absolute inset-0 h-full w-full" aria-label="Challenge soccer field">
-            <defs>
-              <linearGradient id="challengeField" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#166534" />
-                <stop offset="100%" stopColor="#15803d" />
-              </linearGradient>
-            </defs>
-            <rect x="1" y="1" width="118" height="78" fill="url(#challengeField)" stroke="#dcfce7" strokeWidth="0.8" rx="1.5" />
-            <line x1="60" y1="1" x2="60" y2="79" stroke="#dcfce7" strokeWidth="0.7" />
-            <circle cx="60" cy="40" r="9" fill="none" stroke="#dcfce7" strokeWidth="0.7" />
-            <rect x="1" y="22" width="18" height="36" fill="none" stroke="#dcfce7" strokeWidth="0.7" />
-            <rect x="1" y="30" width="7" height="20" fill="none" stroke="#dcfce7" strokeWidth="0.7" />
-            <rect x="101" y="22" width="18" height="36" fill="none" stroke="#dcfce7" strokeWidth="0.7" />
-            <rect x="112" y="30" width="7" height="20" fill="none" stroke="#dcfce7" strokeWidth="0.7" />
-
-            {showWhy ? (
-              <g>
-                <line
-                  x1={challenge.expectedPosition.x * 120}
-                  y1={challenge.expectedPosition.y * 80}
-                  x2={teammateSupport.x * 120}
-                  y2={teammateSupport.y * 80}
-                  stroke="rgba(56, 189, 248, 0.9)"
-                  strokeDasharray="2 2"
-                  strokeWidth="1"
-                />
-                <line
-                  x1={challenge.expectedPosition.x * 120}
-                  y1={challenge.expectedPosition.y * 80}
-                  x2={1}
-                  y2={40}
-                  stroke="rgba(250, 204, 21, 0.9)"
-                  strokeDasharray="2 2"
-                  strokeWidth="1"
-                />
-                <line
-                  x1={challenge.ballPosition.x * 120}
-                  y1={challenge.ballPosition.y * 80}
-                  x2={challenge.expectedPosition.x * 120}
-                  y2={challenge.expectedPosition.y * 80}
-                  stroke="rgba(74, 222, 128, 0.9)"
-                  strokeWidth="1"
-                />
-              </g>
-            ) : null}
-          </svg>
-
-          <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2"
-            style={{ left: ballPct.left, top: ballPct.top }}
-            aria-label="Challenge ball"
-          >
-            <div className="h-7 w-7 rounded-full border border-slate-900/20 bg-white shadow-md" />
-          </div>
-
-          {showWhy || scoreBreakdown ? (
-            <div
-              className={`pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 px-2 py-1 text-[11px] font-semibold shadow-lg ${
-                showWhy ? 'border-cyan-200 bg-cyan-500/85 text-slate-950' : 'border-white/30 bg-slate-900/70 text-slate-100'
-              }`}
-              style={{ left: expectedPct.left, top: expectedPct.top }}
-            >
-              Correct
-            </div>
-          ) : null}
-
-          <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-indigo-500/75 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white"
-            style={{ left: teammatePct.left, top: teammatePct.top }}
-          >
-            {challenge.supportTeammate}
-          </div>
-
-          <button
-            ref={markerRef}
-            type="button"
-            aria-label={`Move ${challenge.playerRoleLabel}`}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerRelease}
-            onPointerCancel={handlePointerRelease}
-            onKeyDown={handleKeyDown}
-            className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-100 bg-amber-500 font-bold text-slate-950 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
-            style={{ left: playerPct.left, top: playerPct.top, touchAction: 'none' }}
-          >
-            You
-          </button>
-        </div>
+    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)]">
+      <section className="min-h-[48dvh] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 shadow-2xl">
+        <SoccerField
+          ball={ball}
+          onBallChange={() => undefined}
+          model={model}
+          selectedRole={safeSelectedRole}
+          settings={settings}
+          mode="challenge"
+          challengePlacement={playerPosition}
+          onChallengePlacementChange={setPlayerPosition}
+          revealExpected={showWhy || Boolean(scoreBreakdown)}
+        />
       </section>
 
       <aside className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/72 p-4 text-slate-100 shadow-2xl backdrop-blur-md">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
-        <h2 className="mt-1 text-xl font-bold">{challenge.category} Scenario</h2>
-        <p className="mt-1 text-sm text-slate-300">
-          Formation {challenge.formation} • Role <strong>{challenge.playerRoleLabel}</strong>
-        </p>
+        <h2 className="mt-1 text-xl font-bold">{scenario.title}</h2>
+        <p className="mt-1 text-sm text-slate-300">{scenario.prompt}</p>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/80 p-3">
           <p className="text-sm font-semibold">{latestMessage}</p>
+          <p className="mt-2 text-sm text-slate-300">{expectedPlayer.explanation.primary}</p>
           {scoreBreakdown ? (
-            <p className={`mt-2 rounded-lg border px-3 py-2 text-sm font-semibold ${scoreBreakdown.colorClass}`}>
-              {scoreBreakdown.message} • {Math.round(scoreBreakdown.distanceYards)} yards away • +{scoreBreakdown.points} points
-            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                <p className="text-slate-400">Goal side</p>
+                <p className="font-semibold text-emerald-300">{scoreBreakdown.goalSideScore}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                <p className="text-slate-400">Shape</p>
+                <p className="font-semibold text-cyan-300">{scoreBreakdown.shapeScore}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                <p className="text-slate-400">Support</p>
+                <p className="font-semibold text-violet-300">{scoreBreakdown.supportScore}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-2">
+                <p className="text-slate-400">Danger</p>
+                <p className="font-semibold text-amber-300">{scoreBreakdown.dangerCoverageScore}</p>
+              </div>
+              <div className="col-span-2 rounded-lg border border-cyan-300/30 bg-cyan-500/10 p-2">
+                <p className="text-slate-300">Final positioning score</p>
+                <p className="text-lg font-bold text-cyan-200">{scoreBreakdown.positioningScore}</p>
+                <p className="text-xs text-slate-400">About {Math.round(scoreBreakdown.distanceYards)} yards from the engine answer.</p>
+              </div>
+            </div>
           ) : null}
-          <p className="mt-2 text-sm text-slate-300">{challenge.explanation}</p>
         </div>
 
-        <div className="mt-4 grid gap-2 text-sm">
-          <p className="font-semibold text-slate-200">Defender learning rules</p>
-          <p className={roleChecks.goalSide ? 'text-emerald-300' : 'text-rose-300'}>Goal side positioning</p>
-          <p className={roleChecks.teammateCover ? 'text-emerald-300' : 'text-amber-300'}>Covering a teammate</p>
-          <p className={roleChecks.centerProtection ? 'text-emerald-300' : 'text-amber-300'}>Protecting the center</p>
-          <p className={roleChecks.ballSideSupport ? 'text-emerald-300' : 'text-amber-300'}>Supporting the ball side</p>
-          <p className={roleChecks.shape ? 'text-emerald-300' : 'text-amber-300'}>Maintaining team shape</p>
-        </div>
+        <div className="mt-4 grid gap-3">
+          <PositionSelector value={safeSelectedRole} options={activeRoles} onChange={(role) => {
+            setSelectedRole(role);
+            setProfile((current) => ({ ...current, favoritePosition: role }));
+          }} title="Challenge role" />
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={checkAnswer}
-            className="min-h-11 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
-          >
-            Check Answer
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowWhy((current) => !current)}
-            className="min-h-11 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-          >
-            Why Am I Here?
-          </button>
-          <button
-            type="button"
-            onClick={nextChallenge}
-            className="min-h-11 rounded-lg bg-indigo-500 px-3 text-sm font-semibold text-white transition hover:bg-indigo-400"
-          >
-            Next Challenge
-          </button>
-        </div>
-
-        <div className="mt-5 rounded-xl border border-white/10 bg-slate-900/80 p-3">
-          <p className="text-sm font-semibold">Player profile</p>
-          <div className="mt-2 grid gap-2">
+          <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Challenge setup</p>
             <label className="text-xs text-slate-300">
-              Name
-              <input
-                value={profile.name}
-                onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))}
-                className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
-                maxLength={24}
-              />
-            </label>
-            <label className="text-xs text-slate-300">
-              Favorite Position
+              Tactical state
               <select
-                value={profile.favoritePosition}
-                onChange={(event) =>
-                  setProfile((current) => ({ ...current, favoritePosition: event.target.value as PlayerPosition }))
-                }
-                className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
+                value={tacticalState}
+                onChange={(event) => setTacticalState(event.target.value as TacticalState)}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-3 text-sm"
               >
-                {Object.entries(MODE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                {challengeStates.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
                   </option>
                 ))}
               </select>
             </label>
-            <label className="text-xs text-slate-300">
-              Age
-              <input
-                type="number"
-                min={7}
-                max={12}
-                value={profile.age}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (!value) {
-                    setProfile((current) => ({ ...current, age: '' }));
-                    return;
-                  }
-
-                  const parsed = Number(value);
-                  const clamped = Math.min(12, Math.max(7, parsed));
-                  setProfile((current) => ({ ...current, age: clamped }));
-                }}
-                className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
-              />
+            <label className="mt-3 block text-xs text-slate-300">
+              Difficulty / learning mode
+              <select
+                value={learningMode}
+                onChange={(event) => setLearningMode(event.target.value as LearningMode)}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-3 text-sm"
+              >
+                {learningModes.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode}
+                  </option>
+                ))}
+              </select>
             </label>
-          </div>
-        </div>
+          </section>
 
-        <div className="mt-5 rounded-xl border border-white/10 bg-slate-900/80 p-3">
-          <p className="text-sm font-semibold">Progress</p>
-          <p className="mt-1 text-sm text-slate-300">Total score: {progress.totalScore}</p>
-          <p className="text-sm text-slate-300">Completed challenges: {progress.completedChallengeIds.length}</p>
-          <div className="mt-2 grid gap-2">
-            {BADGES.map((badge) => {
-              const unlocked = progress.badges.includes(badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  className={`rounded-lg border px-2 py-2 text-xs ${
-                    unlocked ? 'border-emerald-300/50 bg-emerald-500/20 text-emerald-100' : 'border-white/10 bg-slate-950 text-slate-400'
-                  }`}
-                >
-                  <p className="font-semibold">
-                    {badge.icon} {badge.label}
-                  </p>
-                  <p>{badge.description}</p>
-                </div>
-              );
-            })}
+          <section className="rounded-xl bg-slate-900/85 p-3 shadow-lg ring-1 ring-white/10">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Active positions</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ROLE_ORDER.map((role) => {
+                const active = players.find((player) => player.role === role)?.active ?? false;
+                return (
+                  <label key={role} className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() =>
+                        setPlayers((current) =>
+                          current.map((player) => (player.role === role ? { ...player, active: !player.active } : player)),
+                        )
+                      }
+                    />
+                    <span>
+                      <span className="block font-semibold">{role}</span>
+                      <span className="block text-xs text-slate-400">{ROLE_LABELS[role]}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
+          <DisplayControls
+            settings={settings}
+            onToggle={(key) => setSettings((current) => ({ ...current, [key]: !current[key] }))}
+          />
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={checkAnswer}
+              className="min-h-11 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+            >
+              Check Answer
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowWhy((current) => !current)}
+              className="min-h-11 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+            >
+              {showWhy ? 'Hide Answer' : 'Why Here?'}
+            </button>
           </div>
+
+          <section className="rounded-xl border border-white/10 bg-slate-900/80 p-3">
+            <p className="text-sm font-semibold">Player profile</p>
+            <div className="mt-2 grid gap-2">
+              <label className="text-xs text-slate-300">
+                Name
+                <input
+                  value={profile.name}
+                  onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))}
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
+                  maxLength={24}
+                />
+              </label>
+              <label className="text-xs text-slate-300">
+                Favorite Position
+                <select
+                  value={profile.favoritePosition}
+                  onChange={(event) => {
+                    const role = event.target.value as TacticalRole;
+                    setProfile((current) => ({ ...current, favoritePosition: role }));
+                    setSelectedRole(role);
+                  }}
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
+                >
+                  {ROLE_ORDER.map((role) => (
+                    <option key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-slate-300">
+                Age
+                <input
+                  type="number"
+                  min={7}
+                  max={14}
+                  value={profile.age}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (!value) {
+                      setProfile((current) => ({ ...current, age: '' }));
+                      return;
+                    }
+                    const parsed = Number(value);
+                    setProfile((current) => ({ ...current, age: Math.min(14, Math.max(7, parsed)) }));
+                  }}
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-white/10 bg-slate-900/80 p-3">
+            <p className="text-sm font-semibold">Progress</p>
+            <p className="mt-1 text-sm text-slate-300">Total score: {progress.totalScore}</p>
+            <p className="text-sm text-slate-300">Completed challenges: {progress.completedChallengeIds.length}</p>
+            <div className="mt-2 grid gap-2">
+              {BADGES.map((badge) => {
+                const unlocked = progress.badges.includes(badge.id);
+                return (
+                  <div
+                    key={badge.id}
+                    className={`rounded-lg border px-2 py-2 text-xs ${
+                      unlocked ? 'border-emerald-300/50 bg-emerald-500/20 text-emerald-100' : 'border-white/10 bg-slate-950 text-slate-400'
+                    }`}
+                  >
+                    <p className="font-semibold">{badge.icon} {badge.label}</p>
+                    <p>{badge.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </div>
       </aside>
     </div>

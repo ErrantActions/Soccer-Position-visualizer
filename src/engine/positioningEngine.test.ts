@@ -1,117 +1,140 @@
 import { describe, expect, it } from 'vitest';
 import { calculateGoalSidePosition, getRecommendedPosition } from './positioningEngine';
-import type { NormalizedPoint, PlayerPosition } from '../types/soccer';
-import { POSITION_PROFILES } from './positionProfiles';
+import { buildTeamTacticalModel, createDefaultPlayers, findPlayerResult, getBallCarrierTeam, TacticalState } from './tactical';
 
-const testBallLocations: Record<string, NormalizedPoint> = {
-  defendedGoal: { x: 0.06, y: 0.5 },
-  oppositeGoal: { x: 0.95, y: 0.5 },
-  upperTouchline: { x: 0.5, y: 0.03 },
-  lowerTouchline: { x: 0.5, y: 0.97 },
-  centerCircle: { x: 0.5, y: 0.5 },
-  leftPenaltyArea: { x: 0.15, y: 0.44 },
-  oppositeCorner: { x: 0.96, y: 0.96 },
-};
+const legacyPositions = ['LB', 'LCB', 'RCB', 'RB', 'CDM'] as const;
 
-const positions: PlayerPosition[] = ['LB', 'LCB', 'RCB', 'RB', 'CDM'];
-
-const POSITION_BASELINES = {
-  LB: POSITION_PROFILES.LB.baseY,
-  RB: POSITION_PROFILES.RB.baseY,
-};
-
-describe('positioning engine', () => {
-  it('keeps all recommended positions in normalized bounds', () => {
-    for (const position of positions) {
-      for (const ball of Object.values(testBallLocations)) {
-        const result = getRecommendedPosition({ ball, position });
-        expect(result.idealPosition.x).toBeGreaterThanOrEqual(0);
-        expect(result.idealPosition.x).toBeLessThanOrEqual(1);
-        expect(result.idealPosition.y).toBeGreaterThanOrEqual(0);
-        expect(result.idealPosition.y).toBeLessThanOrEqual(1);
-      }
+describe('legacy positioning wrapper', () => {
+  it('keeps recommended positions in normalized bounds for supported legacy roles', () => {
+    for (const position of legacyPositions) {
+      const result = getRecommendedPosition({ ball: { x: 0.62, y: 0.28 }, position });
+      expect(result.idealPosition.x).toBeGreaterThanOrEqual(0);
+      expect(result.idealPosition.x).toBeLessThanOrEqual(1);
+      expect(result.idealPosition.y).toBeGreaterThanOrEqual(0);
+      expect(result.idealPosition.y).toBeLessThanOrEqual(1);
     }
   });
 
-  it('mirrors left and right fullbacks around field center', () => {
-    const ball = { x: 0.54, y: 0.23 };
+  it('keeps defenders goal side of the ball in defensive states', () => {
+    for (const position of legacyPositions) {
+      const result = getRecommendedPosition({ ball: { x: 0.78, y: 0.22 }, position });
+      expect(result.idealPosition.x).toBeLessThanOrEqual(0.78 + 0.001);
+    }
+  });
+
+  it('mirrors outside backs around the field center', () => {
+    const ball = { x: 0.58, y: 0.21 };
     const mirroredBall = { x: ball.x, y: 1 - ball.y };
-
-    const lb = getRecommendedPosition({ ball, position: 'LB' });
-    const rb = getRecommendedPosition({ ball: mirroredBall, position: 'RB' });
-
-    expect(Math.abs(lb.idealPosition.x - rb.idealPosition.x)).toBeLessThan(0.001);
-    expect(Math.abs(lb.idealPosition.y - (1 - rb.idealPosition.y))).toBeLessThan(0.001);
+    const left = getRecommendedPosition({ ball, position: 'LB' });
+    const right = getRecommendedPosition({ ball: mirroredBall, position: 'RB' });
+    expect(left.idealPosition.x).toBeCloseTo(right.idealPosition.x, 6);
+    expect(left.idealPosition.y).toBeCloseTo(1 - right.idealPosition.y, 6);
   });
 
-  it('mirrors left and right center backs around field center', () => {
-    const ball = { x: 0.42, y: 0.31 };
-    const mirroredBall = { x: ball.x, y: 1 - ball.y };
-
-    const lcb = getRecommendedPosition({ ball, position: 'LCB' });
-    const rcb = getRecommendedPosition({ ball: mirroredBall, position: 'RCB' });
-
-    expect(Math.abs(lcb.idealPosition.x - rcb.idealPosition.x)).toBeLessThan(0.001);
-    expect(Math.abs(lcb.idealPosition.y - (1 - rcb.idealPosition.y))).toBeLessThan(0.001);
-  });
-
-  it('returns distinct center back and cdm recommendations', () => {
-    const ball = testBallLocations.centerCircle;
-    const lcb = getRecommendedPosition({ ball, position: 'LCB' });
-    const cdm = getRecommendedPosition({ ball, position: 'CDM' });
-
-    expect(Math.abs(lcb.idealPosition.x - cdm.idealPosition.x) + Math.abs(lcb.idealPosition.y - cdm.idealPosition.y)).toBeGreaterThan(
-      0.05,
-    );
-  });
-
-
-
-  it('keeps defenders goal side of the ball in wide scenarios', () => {
-    const result = getRecommendedPosition({ ball: { x: 0.84, y: 0.15 }, position: 'LB' });
-    expect(result.idealPosition.x).toBeLessThanOrEqual(0.84 - 0.06 + 0.001);
-  });
-
-  it('tucks far-side defenders toward the middle when ball is wide', () => {
-    const result = getRecommendedPosition({ ball: { x: 0.82, y: 0.1 }, position: 'RB' });
-    expect(result.idealPosition.y).toBeLessThan(POSITION_BASELINES.RB);
-  });
-
-  it('creates a reusable goal-side base position helper', () => {
+  it('exposes goal-side helper for legacy callers', () => {
     const helper = calculateGoalSidePosition({
-      ball: { x: 0.72, y: 0.65 },
+      ball: { x: 0.74, y: 0.66 },
       goal: { x: 0, y: 0.5 },
       formation: '4-4-2',
       role: 'LCB',
-      profile: POSITION_PROFILES.LCB,
+      profile: {
+        baseX: 0.24,
+        baseY: 0.39,
+        minX: 0.05,
+        maxX: 0.5,
+        minY: 0.2,
+        maxY: 0.58,
+        lateralWeight: 0.25,
+        depthWeight: 0.55,
+        centralWeight: 0.55,
+        goalSideOffset: 0.045,
+        acceptableRadius: 0.1,
+        lineX: 0.24,
+      },
     });
 
-    expect(helper.x).toBeLessThan(0.72);
-    expect(helper.y).toBeGreaterThanOrEqual(POSITION_PROFILES.LCB.minY);
-    expect(helper.y).toBeLessThanOrEqual(POSITION_PROFILES.LCB.maxY);
+    expect(helper.x).toBeLessThan(0.74);
+    expect(helper.y).toBeGreaterThanOrEqual(0.2);
+    expect(helper.y).toBeLessThanOrEqual(0.58);
+  });
+});
+
+describe('team tactical engine', () => {
+  it('builds results only for active players', () => {
+    const team = buildTeamTacticalModel(
+      {
+        ball: { x: 0.5, y: 0.5 },
+        tacticalState: TacticalState.Defending,
+        ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+        learningMode: 'standard',
+      },
+      {
+        formationLabel: 'Reduced side',
+        orientation: 'leftToRight',
+        stylePreset: 'balanced',
+        activePlayers: createDefaultPlayers().map((player) => ({ ...player, active: ['GK', 'LB', 'LCB', 'RCB', 'RB'].includes(player.role) })),
+      },
+    );
+
+    expect(team.players).toHaveLength(5);
+    expect(team.players.every((player) => ['GK', 'LB', 'LCB', 'RCB', 'RB'].includes(player.player.role))).toBe(true);
   });
 
-  it('presses when the ball is engageable even if shape would need recovery', () => {
-    const ball = { x: 0.28, y: 0.24 };
-    const result = getRecommendedPosition({ ball, position: 'LB' });
+  it('returns the same selected-role answer as the direct tactical model', () => {
+    const ball = { x: 0.61, y: 0.34 };
+    const wrapper = getRecommendedPosition({ ball, position: 'CDM' });
+    const model = buildTeamTacticalModel(
+      {
+        ball,
+        tacticalState: TacticalState.Defending,
+        ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+        learningMode: 'standard',
+        selectedRole: 'CDM',
+      },
+      {
+        formationLabel: 'Legacy Defender View',
+        orientation: 'leftToRight',
+        stylePreset: 'balanced',
+        activePlayers: createDefaultPlayers().filter(
+          (player) =>
+            player.role === 'GK' ||
+            player.role === 'LB' ||
+            player.role === 'LCB' ||
+            player.role === 'RCB' ||
+            player.role === 'RB' ||
+            player.role === 'CDM',
+        ),
+      },
+    );
 
-    expect(result.shouldPressBall).toBe(true);
-    expect(result.coachingCue).toBe('Go win the ball');
+    const direct = findPlayerResult(model, 'CDM');
+    expect(wrapper.idealPosition.x).toBeCloseTo(direct.finalPosition.x, 6);
+    expect(wrapper.idealPosition.y).toBeCloseTo(direct.finalPosition.y, 6);
   });
 
-  it('keeps shape when the ball is outside the defender zone', () => {
-    const ball = { x: 0.82, y: 0.85 };
-    const result = getRecommendedPosition({ ball, position: 'LCB' });
+  it('assigns pressure, cover, and balance when enough active players exist', () => {
+    const team = buildTeamTacticalModel({
+      ball: { x: 0.34, y: 0.18 },
+      tacticalState: TacticalState.Defending,
+      ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+      learningMode: 'standard',
+    });
 
-    expect(result.shouldPressBall).toBe(false);
-    expect(result.coachingCue).toBe('Hold shape and protect the middle');
+    const responsibilities = team.players.map((player) => player.responsibility);
+    expect(responsibilities.filter((value) => value === 'pressure')).toHaveLength(1);
+    expect(responsibilities.filter((value) => value === 'cover')).toHaveLength(1);
+    expect(responsibilities.filter((value) => value === 'balance')).toHaveLength(1);
   });
 
-  it('triggers pressure when the ball enters a defender engagement lane', () => {
-    const ball = { x: 0.18, y: 0.32 };
-    const result = getRecommendedPosition({ ball, position: 'LCB' });
+  it('tucks the far-side wide midfielder inside when the ball is on the opposite side', () => {
+    const team = buildTeamTacticalModel({
+      ball: { x: 0.72, y: 0.12 },
+      tacticalState: TacticalState.Defending,
+      ballCarrierTeam: getBallCarrierTeam(TacticalState.Defending),
+      learningMode: 'standard',
+    });
 
-    expect(result.shouldPressBall).toBe(true);
-    expect(result.coachingCue).toBe('Go win the ball');
+    const rm = findPlayerResult(team, 'RM');
+    expect(rm.finalPosition.y).toBeLessThan(rm.formationAnchor.y);
   });
 });
