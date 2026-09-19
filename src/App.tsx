@@ -150,6 +150,7 @@ function App() {
           </div>
         </div>
       </div>
+      </div>
 
       {isMenuOpen ? (
         <div className="absolute inset-0 z-40" onClick={() => closeMenu()}>
