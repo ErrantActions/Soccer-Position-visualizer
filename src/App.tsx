@@ -20,6 +20,7 @@ function App() {
   const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuPanelRef = useRef<HTMLElement>(null);
   const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
 
@@ -40,6 +41,32 @@ function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusableElements = menuPanelRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+
+      if (!focusableElements?.length) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -110,6 +137,7 @@ function App() {
           <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" />
           <aside
             id="field-settings-menu"
+            ref={menuPanelRef}
             className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto border-l border-white/10 bg-slate-950/96 p-4 text-slate-100 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
