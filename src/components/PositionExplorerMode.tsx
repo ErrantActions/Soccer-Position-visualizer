@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DisplayControls from './DisplayControls';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
@@ -43,6 +43,7 @@ const PositionExplorerMode = ({ isControlsOpen, onCloseControls }: PositionExplo
   const [learningMode, setLearningMode] = useState<LearningMode>('standard');
   const [players, setPlayers] = useState<ActivePlayer[]>(() => createDefaultPlayers());
   const [selectedRole, setSelectedRole] = useState<TacticalRole>('LB');
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const activeRoles = useMemo(
     () => players.filter((player) => player.active).map((player) => player.role),
@@ -54,6 +55,12 @@ const PositionExplorerMode = ({ isControlsOpen, onCloseControls }: PositionExplo
       setSelectedRole(activeRoles[0]);
     }
   }, [activeRoles, selectedRole]);
+
+  useEffect(() => {
+    if (isControlsOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isControlsOpen]);
 
   const safeSelectedRole = activeRoles.includes(selectedRole) ? selectedRole : activeRoles[0] ?? 'GK';
 
@@ -93,20 +100,22 @@ const PositionExplorerMode = ({ isControlsOpen, onCloseControls }: PositionExplo
         <SoccerField ball={ball} onBallChange={setBall} model={model} selectedRole={safeSelectedRole} settings={settings} />
       </section>
 
-      {isControlsOpen ? (
-        <aside
-          id="position-explorer-drawer"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="position-explorer-drawer-title"
-          className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
-        >
+      <aside
+        id="position-explorer-drawer"
+        hidden={!isControlsOpen}
+        aria-hidden={!isControlsOpen}
+        role="dialog"
+        aria-modal={isControlsOpen ? 'true' : undefined}
+        aria-labelledby="position-explorer-drawer-title"
+        className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
+      >
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Position Explorer</p>
               <h2 id="position-explorer-drawer-title" className="mt-1 text-xl font-bold">Team state + learner role</h2>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onCloseControls}
               aria-label="Close position explorer controls"
@@ -226,8 +235,7 @@ const PositionExplorerMode = ({ isControlsOpen, onCloseControls }: PositionExplo
             </div>
           </section>
           </div>
-        </aside>
-      ) : null}
+      </aside>
     </div>
   );
 };

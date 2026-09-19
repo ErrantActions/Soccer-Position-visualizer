@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DisplayControls from './DisplayControls';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
@@ -65,6 +65,7 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
   const [latestMessage, setLatestMessage] = useState('Place yourself, then check your tactical position.');
   const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof evaluateChallengePlacement> | null>(null);
   const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(() => getStartingSpot(loadProfile().favoritePosition, createDefaultPlayers()));
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     saveProfile(profile);
@@ -126,6 +127,12 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
     setLatestMessage('Find the best team-connected spot before you reveal the answer.');
   }, [scenario.id]);
 
+  useEffect(() => {
+    if (isControlsOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isControlsOpen]);
+
   const checkAnswer = () => {
     const result = evaluateChallengePlacement(playerPosition, expectedPlayer);
     setScoreBreakdown(result);
@@ -181,20 +188,22 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
         />
       </section>
 
-      {isControlsOpen ? (
-        <aside
-          id="challenge-mode-drawer"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="challenge-mode-drawer-title"
-          className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
-        >
+      <aside
+        id="challenge-mode-drawer"
+        hidden={!isControlsOpen}
+        aria-hidden={!isControlsOpen}
+        role="dialog"
+        aria-modal={isControlsOpen ? 'true' : undefined}
+        aria-labelledby="challenge-mode-drawer-title"
+        className="absolute inset-y-0 right-0 z-20 w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 shadow-2xl backdrop-blur-md"
+      >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Challenge Mode</p>
               <h2 id="challenge-mode-drawer-title" className="mt-1 text-xl font-bold">{scenario.title}</h2>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onCloseControls}
               aria-label="Close challenge controls"
@@ -395,8 +404,7 @@ const ChallengeMode = ({ isControlsOpen, onCloseControls }: ChallengeModeProps) 
             </div>
           </section>
           </div>
-        </aside>
-      ) : null}
+      </aside>
     </div>
   );
 };

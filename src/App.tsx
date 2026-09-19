@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChallengeMode from './components/ChallengeMode';
 import PositionExplorerMode from './components/PositionExplorerMode';
 
@@ -14,6 +14,8 @@ const App = () => {
   const [showOrientationHint, setShowOrientationHint] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(false);
   const controlsDrawerId = mode === 'explorer' ? 'position-explorer-drawer' : 'challenge-mode-drawer';
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const previousControlsOpen = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
@@ -42,6 +44,13 @@ const App = () => {
   useEffect(() => {
     setControlsOpen(false);
   }, [mode]);
+
+  useEffect(() => {
+    if (previousControlsOpen.current && !controlsOpen) {
+      menuButtonRef.current?.focus();
+    }
+    previousControlsOpen.current = controlsOpen;
+  }, [controlsOpen]);
 
   const requestLandscape = async () => {
     if (!('orientation' in screen) || !('lock' in screen.orientation)) {
@@ -84,10 +93,11 @@ const App = () => {
                 Challenge Mode
               </button>
               <button
+                ref={menuButtonRef}
                 type="button"
                 onClick={() => setControlsOpen((current) => !current)}
                 aria-expanded={controlsOpen}
-                aria-controls={controlsOpen ? controlsDrawerId : undefined}
+                aria-controls={controlsDrawerId}
                 className="min-h-11 rounded-lg border border-white/10 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
               >
                 {controlsOpen ? 'Hide Menu' : 'Menu'}
