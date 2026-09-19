@@ -193,6 +193,8 @@ export type TeamTacticalResult = {
   supportTriangles: SupportTriangle[];
   passingLanes: PassingLane[];
   dangerMap: DangerCell[];
+  ball: NormalizedPoint;
+  activeRoleIds: TacticalRole[];
   selectedRole?: TacticalRole;
   tacticalState: TacticalState;
   learningMode: LearningMode;

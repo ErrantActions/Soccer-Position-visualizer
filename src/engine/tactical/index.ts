@@ -107,9 +107,15 @@ export const buildTeamTacticalModel = (
     const responsibility = responsibilities[player.id];
     const responsibilityTarget =
       responsibility === 'pressure'
-        ? { x: Math.min(context.ball.x - 0.01, stateTarget.x + 0.07), y: stateTarget.y + (context.ball.y - stateTarget.y) * 0.72 }
+        ? {
+            x: clamp(Math.min(context.ball.x - 0.01, stateTarget.x + 0.07), 0, 1),
+            y: stateTarget.y + (context.ball.y - stateTarget.y) * 0.72,
+          }
         : responsibility === 'cover'
-          ? { x: Math.min(context.ball.x - 0.03, goalSideTarget.x), y: (goalSideTarget.y + context.ball.y) / 2 }
+          ? {
+              x: clamp(Math.min(context.ball.x - 0.03, goalSideTarget.x), 0, 1),
+              y: (goalSideTarget.y + context.ball.y) / 2,
+            }
           : responsibility === 'balance'
             ? { x: formationAnchor.x, y: formationAnchor.y + (0.5 - formationAnchor.y) * 0.45 }
             : stateTarget;
@@ -199,6 +205,8 @@ export const buildTeamTacticalModel = (
     supportTriangles,
     passingLanes: lanes,
     dangerMap,
+    ball: context.ball,
+    activeRoleIds: players.map((player) => player.role),
     selectedRole: context.selectedRole,
     tacticalState: context.tacticalState,
     learningMode: context.learningMode,

@@ -113,7 +113,7 @@ const ChallengeMode = () => {
     setScoreBreakdown(null);
     setShowWhy(false);
     setLatestMessage('Find the best team-connected spot before you reveal the answer.');
-  }, [expectedPlayer.formationAnchor.x, expectedPlayer.formationAnchor.y, safeSelectedRole, tacticalState, learningMode]);
+  }, [expectedPlayer.formationAnchor.x, expectedPlayer.formationAnchor.y, safeSelectedRole, tacticalState]);
 
   const checkAnswer = () => {
     const result = evaluateChallengePlacement(playerPosition, expectedPlayer);

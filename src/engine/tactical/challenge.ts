@@ -17,9 +17,11 @@ export const distanceInYards = (a: NormalizedPoint, b: NormalizedPoint): number 
 export const createChallengeScenario = (team: TeamTacticalResult, role: PlayerTacticalResult['player']['role']): ChallengeScenario => {
   const target = team.players.find((player) => player.player.role === role) ?? team.players[0];
   const supportMate = team.players.find((player) => player.player.id !== target.player.id && player.player.line === target.player.line);
+  const ballKey = `${Math.round(team.ball.x * 100)}-${Math.round(team.ball.y * 100)}`;
+  const roleKey = team.activeRoleIds.join('-');
 
   return {
-    id: `${team.tacticalState}-${role}`,
+    id: `${team.tacticalState}-${role}-${ballKey}-${roleKey}`,
     title: `${role} positioning challenge`,
     prompt: `Where should the ${role} stand in ${team.tacticalState}?`,
     role,
