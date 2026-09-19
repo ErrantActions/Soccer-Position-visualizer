@@ -43,8 +43,10 @@ function App() {
 
   useEffect(() => {
     if (!isMenuOpen) {
+      const restoreTarget = lastFocusedElementRef.current;
+
       if (shouldRestoreFocusRef.current) {
-        lastFocusedElementRef.current?.focus();
+        requestAnimationFrame(() => restoreTarget?.focus());
       }
 
       lastFocusedElementRef.current = null;
@@ -171,7 +173,7 @@ function App() {
               <button
                 ref={closeMenuButtonRef}
                 type="button"
-                onClick={() => closeMenu(false)}
+                onClick={() => closeMenu()}
                 className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
               >
                 Close
