@@ -35,20 +35,19 @@ npm test
 npm run build
 ```
 
-## Run with Docker
+## Deploy with GitHub Pages
 
-Build the image:
+This repository can be deployed as a static site with GitHub Pages.
+
+1. Push to the branch configured to run the Pages workflow.
+2. In GitHub repository settings, set **Pages** to deploy from **GitHub Actions**.
+3. The workflow will build the Vite app and publish the `dist` output.
+
+The Vite config automatically uses the `/Soccer-Position-visualizer/` base path during GitHub Actions builds so assets resolve correctly on GitHub Pages.
+
+## Preview a production build locally
 
 ```bash
-docker build -t soccer-position-visualizer .
+npm run build
+npm run preview
 ```
-
-Run it:
-
-```bash
-docker run --rm -p 8080:80 soccer-position-visualizer
-```
-
-Then open `http://<your-unraid-host>:8080`.
-
-The container builds the Vite app and serves the static files with nginx, so it is suitable for an Unraid deployment.
