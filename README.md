@@ -58,3 +58,5 @@ To preview the same subpath behavior used by GitHub Pages, build with the reposi
 GITHUB_REPOSITORY=Girthquake/Soccer-Position-visualizer npm run build
 npm run preview
 ```
+
+Then open `http://localhost:4173/Soccer-Position-visualizer/`.

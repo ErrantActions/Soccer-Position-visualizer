@@ -4,7 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 const configuredBasePath = process.env.BASE_PATH;
 const repositoryName =
-  process.env.GITHUB_PAGES_REPOSITORY_NAME ?? process.env.GITHUB_REPOSITORY?.split('/')[1];
+  (
+    process.env.GITHUB_PAGES_REPOSITORY_NAME ?? process.env.GITHUB_REPOSITORY?.split('/')[1]
+  )?.trim() || undefined;
 
 const normalizeBasePath = (value: string): string => {
   const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
@@ -14,7 +16,7 @@ const normalizeBasePath = (value: string): string => {
 const githubPagesBase = configuredBasePath
   ? normalizeBasePath(configuredBasePath)
   : repositoryName
-    ? `/${repositoryName}/`
+    ? normalizeBasePath(repositoryName)
     : '/';
 
 export default defineConfig({
