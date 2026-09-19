@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getRecommendedPosition } from './positioningEngine';
+import { calculateGoalSidePosition, getRecommendedPosition } from './positioningEngine';
 import type { NormalizedPoint, PlayerPosition } from '../types/soccer';
+import { POSITION_PROFILES } from './positionProfiles';
 
 const testBallLocations: Record<string, NormalizedPoint> = {
   defendedGoal: { x: 0.06, y: 0.5 },
@@ -13,6 +14,11 @@ const testBallLocations: Record<string, NormalizedPoint> = {
 };
 
 const positions: PlayerPosition[] = ['LB', 'LCB', 'RCB', 'RB', 'CDM'];
+
+const POSITION_BASELINES = {
+  LB: POSITION_PROFILES.LB.baseY,
+  RB: POSITION_PROFILES.RB.baseY,
+};
 
 describe('positioning engine', () => {
   it('keeps all recommended positions in normalized bounds', () => {
@@ -59,12 +65,38 @@ describe('positioning engine', () => {
     );
   });
 
-  it('flags pressure when the ball is in the defender zone and close enough to engage', () => {
+
+
+  it('keeps defenders goal side of the ball in wide scenarios', () => {
+    const result = getRecommendedPosition({ ball: { x: 0.84, y: 0.15 }, position: 'LB' });
+    expect(result.idealPosition.x).toBeLessThanOrEqual(0.84 - 0.06 + 0.001);
+  });
+
+  it('tucks far-side defenders toward the middle when ball is wide', () => {
+    const result = getRecommendedPosition({ ball: { x: 0.82, y: 0.1 }, position: 'RB' });
+    expect(result.idealPosition.y).toBeLessThan(POSITION_BASELINES.RB);
+  });
+
+  it('creates a reusable goal-side base position helper', () => {
+    const helper = calculateGoalSidePosition({
+      ball: { x: 0.72, y: 0.65 },
+      goal: { x: 0, y: 0.5 },
+      formation: '4-4-2',
+      role: 'LCB',
+      profile: POSITION_PROFILES.LCB,
+    });
+
+    expect(helper.x).toBeLessThan(0.72);
+    expect(helper.y).toBeGreaterThanOrEqual(POSITION_PROFILES.LCB.minY);
+    expect(helper.y).toBeLessThanOrEqual(POSITION_PROFILES.LCB.maxY);
+  });
+
+  it('prefers shape over over-committing when engagement is risky', () => {
     const ball = { x: 0.28, y: 0.24 };
     const result = getRecommendedPosition({ ball, position: 'LB' });
 
-    expect(result.shouldPressBall).toBe(true);
-    expect(result.coachingCue).toBe('Go win the ball');
+    expect(result.shouldPressBall).toBe(false);
+    expect(result.coachingCue).toBe('Recover inside your boundary');
   });
 
   it('keeps shape when the ball is outside the defender zone', () => {
