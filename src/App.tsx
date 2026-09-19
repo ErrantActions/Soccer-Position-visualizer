@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DisplayControls from './components/DisplayControls';
 import HeatmapLegend from './components/HeatmapLegend';
 import PositionSelector from './components/PositionSelector';
@@ -20,11 +20,35 @@ function App() {
   const [ball, setBall] = useState<NormalizedPoint>(createCenterBall);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const closeMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const positioning = useMemo(
     () => getRecommendedPosition({ ball, position: selectedPosition }),
     [ball, selectedPosition],
   );
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      lastFocusedElementRef.current?.focus();
+      return;
+    }
+
+    lastFocusedElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeMenuButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-slate-950">
@@ -82,24 +106,26 @@ function App() {
       </div>
 
       {isMenuOpen ? (
-        <div
-          className="absolute inset-0 z-40 bg-slate-950/55 backdrop-blur-sm"
-          onClick={() => setIsMenuOpen(false)}
-          aria-hidden="true"
-        >
+        <div className="absolute inset-0 z-40" onClick={() => setIsMenuOpen(false)}>
+          <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" />
           <aside
             id="field-settings-menu"
             className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto border-l border-white/10 bg-slate-950/96 p-4 text-slate-100 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
-            aria-label="Field settings menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="field-settings-title"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Menu</p>
-                <h1 className="mt-1 text-2xl font-bold">Field settings</h1>
+                <h1 id="field-settings-title" className="mt-1 text-2xl font-bold">
+                  Field settings
+                </h1>
                 <p className="mt-1 text-sm text-slate-300">Change the defender, overlays, and ball state without leaving the field.</p>
               </div>
               <button
+                ref={closeMenuButtonRef}
                 type="button"
                 onClick={() => setIsMenuOpen(false)}
                 className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
