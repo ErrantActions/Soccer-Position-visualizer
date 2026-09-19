@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DisplayControls from './DisplayControls';
 import PositionSelector from './PositionSelector';
 import SoccerField from './SoccerField';
@@ -43,6 +43,12 @@ const PositionExplorerMode = () => {
     () => players.filter((player) => player.active).map((player) => player.role),
     [players],
   );
+
+  useEffect(() => {
+    if (!activeRoles.includes(selectedRole) && activeRoles[0]) {
+      setSelectedRole(activeRoles[0]);
+    }
+  }, [activeRoles, selectedRole]);
 
   const safeSelectedRole = activeRoles.includes(selectedRole) ? selectedRole : activeRoles[0] ?? 'GK';
 
@@ -151,14 +157,9 @@ const PositionExplorerMode = () => {
                       type="checkbox"
                       checked={active}
                       onChange={() =>
-                        setPlayers((current) => {
-                          const next = current.map((player) => (player.role === role ? { ...player, active: !player.active } : player));
-                          const nextActive = next.filter((player) => player.active).map((player) => player.role);
-                          if (!nextActive.includes(safeSelectedRole) && nextActive[0]) {
-                            setSelectedRole(nextActive[0]);
-                          }
-                          return next;
-                        })
+                        setPlayers((current) =>
+                          current.map((player) => (player.role === role ? { ...player, active: !player.active } : player)),
+                        )
                       }
                     />
                     <span>

@@ -193,7 +193,12 @@ export const buildTeamTacticalModel = (
         },
         weakSideShade:
           zone.inWeakSideCorridor
-            ? { x: finalPosition.x - 0.05, y: finalPosition.y - 0.07, width: 0.1, height: 0.14 }
+            ? {
+                x: clamp(finalPosition.x - 0.05, 0, 0.9),
+                y: clamp(finalPosition.y - 0.07, 0, 0.86),
+                width: Math.min(0.1, 1 - clamp(finalPosition.x - 0.05, 0, 0.9)),
+                height: Math.min(0.14, 1 - clamp(finalPosition.y - 0.07, 0, 0.86)),
+              }
             : null,
       },
     };

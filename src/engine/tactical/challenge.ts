@@ -41,9 +41,9 @@ export const evaluateChallengePlacement = (
   const goalSideScore = scoreGoalSide(placement, expected.contextBall);
   const supportScore = scoreSupport(placement, supportTarget);
   const dangerCoverageScore = scoreDangerCoverage(placement);
-  const positioningScore = distanceYards <= 1
-    ? 100
-    : Math.round((goalSideScore * 0.35 + shapeScore * 0.25 + supportScore * 0.2 + dangerCoverageScore * 0.2));
+  const baseScore = goalSideScore * 0.35 + shapeScore * 0.25 + supportScore * 0.2 + dangerCoverageScore * 0.2;
+  const distanceBonus = clamp(10 - distanceYards * 2, 0, 10);
+  const positioningScore = clamp(Math.round(baseScore + distanceBonus), 0, 100);
 
   let feedback = 'Good shape.';
   if (goalSideScore < 65) {
