@@ -55,7 +55,7 @@ const HeatmapCanvas = ({ ball, position, dimensions, visible }: HeatmapCanvasPro
       }
     }
 
-    context.imageSmoothingEnabled = true;
+    context.imageSmoothingEnabled = false;
     context.drawImage(offscreen, 0, 0, dimensions.width, dimensions.height);
   }, [ball, dimensions.dpr, dimensions.height, dimensions.width, position, visible]);
 

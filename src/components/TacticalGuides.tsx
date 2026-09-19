@@ -6,14 +6,33 @@ type TacticalGuidesProps = {
   positioning: PositioningResult;
 };
 
+const DEFENDED_DANGER_ZONE = { x: 8, y: 28, width: 26, height: 24 };
+const CENTRAL_PROTECTION_CHANNEL = { x: 0, y: 30, width: 60, height: 20 };
+
 const TacticalGuides = ({ ball, positioning }: TacticalGuidesProps) => {
   const player = positioning.idealPosition;
   const markerId = useId();
 
   return (
     <g aria-label="Tactical guides" pointerEvents="none">
-      <rect x={8} y={28} width={26} height={24} fill="rgba(248, 113, 113, 0.14)" stroke="rgba(248, 113, 113, 0.65)" strokeDasharray="2 2" />
-      <rect x={0} y={30} width={60} height={20} fill="rgba(148, 163, 184, 0.12)" stroke="rgba(148, 163, 184, 0.45)" strokeDasharray="4 3" />
+      <rect
+        x={DEFENDED_DANGER_ZONE.x}
+        y={DEFENDED_DANGER_ZONE.y}
+        width={DEFENDED_DANGER_ZONE.width}
+        height={DEFENDED_DANGER_ZONE.height}
+        fill="rgba(248, 113, 113, 0.14)"
+        stroke="rgba(248, 113, 113, 0.65)"
+        strokeDasharray="2 2"
+      />
+      <rect
+        x={CENTRAL_PROTECTION_CHANNEL.x}
+        y={CENTRAL_PROTECTION_CHANNEL.y}
+        width={CENTRAL_PROTECTION_CHANNEL.width}
+        height={CENTRAL_PROTECTION_CHANNEL.height}
+        fill="rgba(148, 163, 184, 0.12)"
+        stroke="rgba(148, 163, 184, 0.45)"
+        strokeDasharray="4 3"
+      />
       <line
         x1={60}
         y1={40}

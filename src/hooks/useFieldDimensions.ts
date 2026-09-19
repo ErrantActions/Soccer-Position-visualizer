@@ -24,8 +24,11 @@ export const useFieldDimensions = (ref: RefObject<HTMLElement | null>): FieldDim
 
     measure();
 
-    const observer = new ResizeObserver(measure);
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
 
+    const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, [ref]);
