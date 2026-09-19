@@ -27,7 +27,12 @@ const SoccerField = ({ ball, onBallChange, selectedPosition, positioning, settin
         ref={fieldRef}
         className="relative h-full w-full touch-none select-none overflow-hidden bg-[#0c4a2d]"
       >
-        <svg viewBox="0 0 120 80" className="absolute inset-0 h-full w-full" aria-label="Soccer field">
+        <svg
+          viewBox="0 0 120 80"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full"
+          aria-label="Soccer field"
+        >
           <defs>
             <linearGradient id="fieldSurface" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#166534" />

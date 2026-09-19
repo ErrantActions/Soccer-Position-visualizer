@@ -106,4 +106,12 @@ describe('positioning engine', () => {
     expect(result.shouldPressBall).toBe(false);
     expect(result.coachingCue).toBe('Hold shape and protect the middle');
   });
+
+  it('triggers pressure when the ball enters a defender engagement lane', () => {
+    const ball = { x: 0.2, y: 0.23 };
+    const result = getRecommendedPosition({ ball, position: 'LB' });
+
+    expect(result.shouldPressBall).toBe(true);
+    expect(result.coachingCue).toBe('Go win the ball');
+  });
 });
