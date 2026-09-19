@@ -54,7 +54,7 @@ const ChallengeMode = () => {
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile());
   const [progress, setProgress] = useState<ChallengeProgress>(() => loadProgress());
   const [challengeIndex, setChallengeIndex] = useState(0);
-  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot(CHALLENGES[0]?.playerRole ?? 'LB'));
+  const [playerPosition, setPlayerPosition] = useState<NormalizedPoint>(getStartingSpot('LB'));
   const [showWhy, setShowWhy] = useState(false);
   const [latestMessage, setLatestMessage] = useState<string>('Drag the highlighted player to the best spot, then tap Check Answer.');
   const [scoreBreakdown, setScoreBreakdown] = useState<ReturnType<typeof scoreChallenge> | null>(null);
@@ -407,7 +407,14 @@ const ChallengeMode = () => {
                 value={profile.age}
                 onChange={(event) => {
                   const value = event.target.value;
-                  setProfile((current) => ({ ...current, age: value ? Number(value) : '' }));
+                  if (!value) {
+                    setProfile((current) => ({ ...current, age: '' }));
+                    return;
+                  }
+
+                  const parsed = Number(value);
+                  const clamped = Math.min(12, Math.max(7, parsed));
+                  setProfile((current) => ({ ...current, age: clamped }));
                 }}
                 className="mt-1 w-full rounded-md border border-white/20 bg-slate-950 px-2 py-2 text-sm"
               />
